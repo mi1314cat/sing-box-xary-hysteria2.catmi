@@ -95,7 +95,7 @@ install_pkgs() {
 install_shortcut() {
   cat > /root/sbox/catmi.sh << EOF
 #!/usr/bin/env bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh) \$1
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/tcp-brutal-reality.sh) \$1
 EOF
   chmod +x /root/sbox/catmi.sh
   ln -sf /root/sbox/catmi.sh /usr/bin/catmi
