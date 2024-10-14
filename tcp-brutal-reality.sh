@@ -93,12 +93,12 @@ install_pkgs() {
   done
 }
 install_shortcut() {
-  cat > /root/sbox/mianyang.sh << EOF
+  cat > /root/sbox/catmi.sh << EOF
 #!/usr/bin/env bash
 bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh) \$1
 EOF
-  chmod +x /root/sbox/mianyang.sh
-  ln -sf /root/sbox/mianyang.sh /usr/bin/mianyang
+  chmod +x /root/sbox/catmi.sh
+  ln -sf /root/sbox/catmi.sh /usr/bin/catmi
 
 }
 reload_singbox(){
@@ -716,8 +716,8 @@ uninstall_singbox() {
     # Remove configuration and executable files
     rm -f /root/sbox/sbconfig_server.json
     rm -f /root/sbox/sing-box
-    rm -f /root/sbox/mianyang.sh
-    rm -f /usr/bin/mianyang
+    rm -f /root/sbox/catmi.sh
+    rm -f /usr/bin/catmi
     rm -f /root/sbox/self-cert/private.key
     rm -f /root/sbox/self-cert/cert.pem
     rm -f /root/sbox/config
@@ -1018,7 +1018,7 @@ while :; do
      echo ""
      info "请选择选项："
      echo ""
-     info "1. 使用绵羊提供的warp节点(默认)"
+     info "1. 使用catmi提供的warp节点(默认)"
      info "2. 使用手动刷的warp节点"
      info "0. 退出"
      echo ""
@@ -1256,13 +1256,13 @@ process_singbox() {
 
 
 # 作者介绍
-print_with_delay "Reality brutal 脚本 by 绵阿羊" 0.03
+print_with_delay "Reality brutal 脚本 " 0.03
 echo ""
 echo ""
 #install pkgs
 install_pkgs
 # Check if reality.json, sing-box, and sing-box.service already exist
-if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/mianyang.sh" ] && [ -f "/usr/bin/mianyang" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
+if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/catmi.sh" ] && [ -f "/usr/bin/catmi" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
     echo ""
     warning "sing-box-brutal-reality已安装"
     show_status
@@ -1299,7 +1299,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
       5)
           enable_bbr
-          mianyang
+          catmi
           exit 0
           ;;
       6)
@@ -1467,7 +1467,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl restart sing-box
     install_shortcut
     show_client_configuration
-    hint "输入mianyang,打开菜单"
+    hint "输入catmi,打开菜单"
 else
     error "check sing-box server config profile error!"
 fi
