@@ -6,33 +6,63 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 下载并安装 Xray
-echo "正在下载并安装 Xray..."
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+# 检测系统架构
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)
+    ARCH_TYPE="linux_amd64"
+    ;;
+  aarch64)
+    ARCH_TYPE="linux_arm64"
+    ;;
+  armv7l)
+    ARCH_TYPE="linux_arm32"
+    ;;
+  *)
+    echo "不支持的架构: $ARCH"
+    exit 1
+    ;;
+esac
 
-# 检测服务器 IP
-server_ip=$(curl -s http://ipinfo.io/ip)
+# 获取最新版本的下载链接
+latest_release=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest)
+download_url=$(echo "$latest_release" | grep "browser_download_url" | grep "$ARCH_TYPE" | cut -d '"' -f 4)
 
-# 用户输入端口
-read -p "请输入您希望使用的端口: " port
+if [ -z "$download_url" ]; then
+  echo "未找到适合该架构的 Xray 版本。"
+  exit 1
+fi
+
+# 下载最新版本
+echo "正在下载适合 $ARCH_TYPE 的最新 Xray 版本..."
+curl -L -o xray.zip "$download_url"
+
+# 解压缩下载的文件
+echo "正在解压缩..."
+unzip xray.zip
+chmod +x xray
+
+# 移动到 /usr/local/bin 目录
+mv xray /usr/local/bin/
+
+# 清理
+rm xray.zip
+
+# 创建配置文件目录
+mkdir -p /etc/xray/
 
 # 自动生成 UUID
 uuid=$(cat /proc/sys/kernel/random/uuid)
 
-# 生成公钥和短 ID
-# 使用 OpenSSL 生成公钥（示例，具体生成方法根据需要调整）
-public_key=$(openssl rand -hex 32)
-short_id=$(openssl rand -hex 8)
-
-# 生成节点配置文件
+# 创建默认配置文件
 cat << EOF > /etc/xray/config.json
 {
   "outbounds": [{
     "protocol": "vless",
     "settings": {
       "vnext": [{
-        "address": "$server_ip",
-        "port": $port,
+        "address": "your.server.ip",
+        "port": 443,
         "users": [{
           "id": "$uuid",
           "flow": "xtls-rprx-vision",
@@ -42,7 +72,7 @@ cat << EOF > /etc/xray/config.json
     }
   }],
   "inbounds": [{
-    "port": $port,
+    "port": 443,
     "protocol": "vless",
     "settings": {
       "clients": [{
@@ -58,34 +88,18 @@ cat << EOF > /etc/xray/config.json
         "allowInsecure": false
       },
       "realitySettings": {
-        "publicKey": "$public_key",
-        "shortId": "$short_id"
+        "publicKey": "your-public-key",
+        "shortId": "your-short-id"
       }
     }
   }]
 }
 EOF
 
-# 设置 Xray 自启
+# 设置 Xray 自启（如果需要）
 echo "设置 Xray 为开机自启..."
 systemctl enable xray
 systemctl start xray
-
-# 输出节点信息
-echo "节点信息如下:"
-echo "节点名称: Reality-Vision"
-echo "类型: vless"
-echo "服务器: $server_ip"
-echo "端口: $port"
-echo "UUID: $uuid"
-echo "网络: tcp"
-echo "UDP: true"
-echo "TLS: true"
-echo "流: xtls-rprx-vision"
-echo "服务器名称: itunes.apple.com"
-echo "客户端指纹: chrome"
-echo "公钥: $public_key"
-echo "短 ID: $short_id"
 
 # 显示 Xray 运行状态
 echo "Xray 运行状态:"
@@ -96,8 +110,8 @@ echo "格式化的节点配置:"
 cat << EOF
 name: Reality-Vision
 type: vless
-server: $server_ip
-port: $port
+server: your.server.ip
+port: 443
 uuid: $uuid
 network: tcp
 udp: true
@@ -106,12 +120,12 @@ flow: xtls-rprx-vision
 servername: itunes.apple.com
 client-fingerprint: chrome
 reality-opts:
-  public-key: $public_key
-  short-id: $short_id
+  public-key: your-public-key
+  short-id: your-short-id
 EOF
 
 # 生成并输出 VLESS 链接
-vless_link="vless://$uuid@$server_ip:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=itunes.apple.com&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none"
+vless_link="vless://$uuid@your.server.ip:443?encryption=none&flow=xtls-rprx-vision&security=reality&sni=itunes.apple.com&fp=chrome&pbk=your-public-key&sid=your-short-id&type=tcp&headerType=none"
 echo "VLESS 链接:"
 echo "$vless_link"
 
