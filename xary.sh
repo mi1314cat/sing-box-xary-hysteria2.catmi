@@ -19,11 +19,10 @@ read -p "请输入您希望使用的端口: " port
 # 自动生成 UUID
 uuid=$(cat /proc/sys/kernel/random/uuid)
 
-# 自动生成公钥和短 ID
-# 这里需要根据你具体的配置方法来生成这些值
-# 示例生成随机字符串作为 public_key 和 short_id
-public_key=$(cat /proc/sys/kernel/random/uuid)
-short_id=$(echo "$RANDOM" | md5sum | head -c 8)
+# 生成公钥和短 ID
+# 使用 OpenSSL 生成公钥（示例，具体生成方法根据需要调整）
+public_key=$(openssl rand -hex 32)
+short_id=$(openssl rand -hex 8)
 
 # 生成节点配置文件
 cat << EOF > /etc/xray/config.json
