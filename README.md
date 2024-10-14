@@ -8,17 +8,18 @@
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh)
 ```
+### reality hysteria2二合一脚本
+
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/install.sh)
+```
 ### reality和hysteria2 vmess ws三合一脚本
 
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/beta.sh)
 ```
 
-### reality hysteria2二合一脚本
 
-```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/install.sh)
-```
 ### xary  vmess+ws or socks 脚本
 
 ```bash
