@@ -1,5 +1,11 @@
 #!/bin/bash
-
+printf "\e[92m"
+printf "                       |\\__/,|   (\\\\ \n"
+printf "                     _.|o o  |_   ) )\n"
+printf "       -------------(((---(((-------------------\n"
+printf "                           catmi \n"
+printf "       -----------------------------------------\n"
+printf "\e[0m"
 # delay print
 print_with_delay() {
     text="$1"
