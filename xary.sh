@@ -1,5 +1,11 @@
 #!/bin/bash
-
+printf "\e[92m"
+printf "                       |\\__/,|   (\\\\ \n"
+printf "                     _.|o o  |_   ) )\n"
+printf "       -------------(((---(((-------------------\n"
+printf "                           catmi \n"
+printf "       -----------------------------------------\n"
+printf "\e[0m"
 # 默认参数设置
 DEFAULT_START_PORT=20000                         # 默认起始端口
 DEFAULT_SOCKS_USERNAME="userb"                   # 默认 SOCKS 账号
