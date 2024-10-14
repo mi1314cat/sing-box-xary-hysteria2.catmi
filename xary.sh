@@ -6,50 +6,43 @@ printf "       -------------(((---(((-------------------\n"
 printf "                       catmi \n"
 printf "       -----------------------------------------\n"
 printf "\e[0m"
-# 默认参数设置
+
+
 DEFAULT_START_PORT=20000                         # 默认起始端口
-DEFAULT_SOCKS_USERNAME="userb"                   # 默认 SOCKS 账号
-DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认 SOCKS 密码
-DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid) # 随机生成 UUID
-DEFAULT_WS_PATH="/ws"                            # 默认 WebSocket 路径，若不指定则随机生成
+DEFAULT_SOCKS_USERNAME="userb"                   # 默认socks账号
+DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认socks密码
+DEFAULT_WS_PATH="/ws"                            # 默认ws路径
+DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid) # 默认随机UUID
 
-# 获取服务器公网 IP 地址，如果没有公网 IP，则提示用户输入
-get_public_ip() {
-    IP_ADDRESSES=($(hostname -I))
-    PUBLIC_IPS=()
+# 自动检测公网 IPv4 和 IPv6 地址
+PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
+PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
 
-    for ip in "${IP_ADDRESSES[@]}"; do
-        if [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && [[ ! "$ip" =~ ^(10\.|172\.16|192\.168) ]]; then
-            PUBLIC_IPS+=("$ip")
-        fi
-    done
+if [[ -z "$PUBLIC_IP_V4" && -z "$PUBLIC_IP_V6" ]]; then
+    echo "没有检测到公网 IP，手动输入 IP 地址:"
+    read -p "请输入 IP 地址: " MANUAL_IP
+    PUBLIC_IPS=($MANUAL_IP)
+else
+    echo "公网 IPv4 地址: $PUBLIC_IP_V4"
+    echo "公网 IPv6 地址: $PUBLIC_IP_V6"
+    PUBLIC_IPS=($PUBLIC_IP_V4 $PUBLIC_IP_V6)
+fi
 
-    if [ ${#PUBLIC_IPS[@]} -eq 0 ]; then
-        read -p "没有检测到公网 IP，手动输入 IP 地址: " MANUAL_IP
-        PUBLIC_IPS+=("$MANUAL_IP")
-    fi
+# 随机生成 WebSocket 路径
+generate_random_ws_path() {
+    echo "/ws$(openssl rand -hex 8)"
 }
 
-# 自动下载最新 Xray 版本
+# 下载并安装最新的 Xray
 install_xray() {
-    echo "安装 Xray..."
-    
-    if ! command -v xrayL &> /dev/null; then
-        apt-get install -y unzip wget || yum install -y unzip wget
-
-        # 获取最新的 Xray 版本号
-        latest_version=$(wget -qO- https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')
-        echo "正在下载 Xray 版本: $latest_version"
-        
-        # 下载并安装最新版本
-        wget https://github.com/XTLS/Xray-core/releases/download/$latest_version/Xray-linux-64.zip
-        unzip Xray-linux-64.zip
-        mv xray /usr/local/bin/xrayL
-        chmod +x /usr/local/bin/xrayL
-        rm -f Xray-linux-64.zip
-
-        # 创建 Xray systemd 服务
-        cat <<EOF >/etc/systemd/system/xrayL.service
+    echo "安装最新 Xray..."
+    apt-get install unzip -y || yum install unzip -y
+    LATEST_XRAY=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep linux-64.zip | cut -d '"' -f 4)
+    wget $LATEST_XRAY -O Xray-linux-64.zip
+    unzip Xray-linux-64.zip
+    mv xray /usr/local/bin/xrayL
+    chmod +x /usr/local/bin/xrayL
+    cat <<EOF >/etc/systemd/system/xrayL.service
 [Unit]
 Description=XrayL Service
 After=network.target
@@ -63,18 +56,10 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-        systemctl daemon-reload
-        systemctl enable xrayL.service
-        echo "Xray 安装完成并设置为开机自启."
-    else
-        echo "Xray 已经安装."
-    fi
-}
-
-# 随机生成 WebSocket 路径
-generate_random_ws_path() {
-    WS_PATH=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
-    echo "/$WS_PATH"
+    systemctl daemon-reload
+    systemctl enable xrayL.service
+    systemctl start xrayL.service
+    echo "Xray 安装完成."
 }
 
 # 配置 Xray
@@ -138,9 +123,9 @@ config_xray() {
 
     echo ""
     echo "生成 $config_type 配置完成"
-    echo "起始端口:$START_PORT"
-    echo "结束端口:$(($START_PORT + ${#PUBLIC_IPS[@]} - 1))"
-    
+    echo "起始端口: $START_PORT"
+    echo "结束端口: $(($START_PORT + ${#PUBLIC_IPS[@]} - 1))"
+
     # 输出配置信息
     if [ "$config_type" == "socks" ]; then
         echo "socks账号: $SOCKS_USERNAME"
@@ -153,24 +138,20 @@ config_xray() {
     echo ""
 }
 
-
 # 主函数
 main() {
-    get_public_ip
-    install_xray
-
+    [ -x "$(command -v xrayL)" ] || install_xray
     if [ $# -eq 1 ]; then
         config_type="$1"
     else
         read -p "选择生成的节点类型 (socks/vmess): " config_type
     fi
-
     if [ "$config_type" == "vmess" ]; then
         config_xray "vmess"
     elif [ "$config_type" == "socks" ]; then
         config_xray "socks"
     else
-        echo "未正确选择类型，使用默认 SOCKS 配置."
+        echo "未正确选择类型，使用默认socks配置."
         config_xray "socks"
     fi
 }
