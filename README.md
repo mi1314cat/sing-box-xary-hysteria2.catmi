@@ -13,17 +13,20 @@
 - Reality Hysteria2 （vmess ws）一键安装脚本
   
 ## 使用教程
-
+### hysteria2 脚本
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria2/raw/refs/heads/main/H3hy2.sh)
+```
 ### reality和hysteria2 vmess ws三合一脚本
 
 ```bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria2/raw/main/beta.sh)
 ```
 
 ### reality hysteria2二合一脚本
 
 ```bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/install.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria/raw/main/install.sh)
 ```
 
 ## 功能
