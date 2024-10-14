@@ -19,6 +19,12 @@ read -p "请输入您希望使用的端口: " port
 # 自动生成 UUID
 uuid=$(cat /proc/sys/kernel/random/uuid)
 
+# 自动生成公钥和短 ID
+# 这里需要根据你具体的配置方法来生成这些值
+# 示例生成随机字符串作为 public_key 和 short_id
+public_key=$(cat /proc/sys/kernel/random/uuid)
+short_id=$(echo "$RANDOM" | md5sum | head -c 8)
+
 # 生成节点配置文件
 cat << EOF > /etc/xray/config.json
 {
@@ -53,8 +59,8 @@ cat << EOF > /etc/xray/config.json
         "allowInsecure": false
       },
       "realitySettings": {
-        "publicKey": "\$public_key",
-        "shortId": "\$short_id"
+        "publicKey": "$public_key",
+        "shortId": "$short_id"
       }
     }
   }]
@@ -79,7 +85,11 @@ echo "TLS: true"
 echo "流: xtls-rprx-vision"
 echo "服务器名称: itunes.apple.com"
 echo "客户端指纹: chrome"
-echo "公钥: \$public_key"
-echo "短 ID: \$short_id"
+echo "公钥: $public_key"
+echo "短 ID: $short_id"
+
+# 显示 Xray 运行状态
+echo "Xray 运行状态:"
+systemctl status xray
 
 echo "Xray 安装及配置完成!"
