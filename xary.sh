@@ -19,9 +19,21 @@ fi
 
 # 生成公钥和私钥对用于 Reality
 generate_reality_keys() {
-    keys=$(xray x25519) # Xray 自带命令生成 Reality 的密钥对
+    # 使用 Xray 生成 Reality 密钥对
+    keys=$(xray x25519)
+    if [[ $? -ne 0 ]]; then
+        echo "生成 Reality 密钥对失败，请检查 Xray 是否正确安装并配置。"
+        exit 1
+    fi
     private_key=$(echo "$keys" | grep "Private key" | cut -d ' ' -f3)
     public_key=$(echo "$keys" | grep "Public key" | cut -d ' ' -f3)
+    
+    # 检查是否成功提取公钥和私钥
+    if [[ -z "$public_key" || -z "$private_key" ]]; then
+        echo "未能成功生成公钥和私钥。"
+        exit 1
+    fi
+
     echo "私钥: $private_key"
     echo "公钥: $public_key"
 }
