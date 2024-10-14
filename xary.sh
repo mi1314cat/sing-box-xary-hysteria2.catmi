@@ -91,4 +91,28 @@ echo "短 ID: $short_id"
 echo "Xray 运行状态:"
 systemctl status xray
 
+# 输出格式化的节点配置
+echo "格式化的节点配置:"
+cat << EOF
+name: Reality-Vision
+type: vless
+server: $server_ip
+port: $port
+uuid: $uuid
+network: tcp
+udp: true
+tls: true
+flow: xtls-rprx-vision
+servername: itunes.apple.com
+client-fingerprint: chrome
+reality-opts:
+  public-key: $public_key
+  short-id: $short_id
+EOF
+
+# 生成并输出 VLESS 链接
+vless_link="vless://$uuid@$server_ip:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=itunes.apple.com&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none"
+echo "VLESS 链接:"
+echo "$vless_link"
+
 echo "Xray 安装及配置完成!"
