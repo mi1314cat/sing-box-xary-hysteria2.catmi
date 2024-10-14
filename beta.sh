@@ -1532,7 +1532,7 @@ disable_hy2hopping(){
 }
 
 # 作者介绍
-print_with_delay "***************** catmi****************" 0.03
+print_with_delay "sing-box-reality-hysteria2" 0.03
 echo ""
 echo ""
 #install pkgs
