@@ -153,6 +153,7 @@ main() {
     echo "2) VMess"
     echo "3) Reality"
     read -p "输入选项 (1/2/3): " option
+    echo "你选择的选项是: $option" # 调试信息
     case $option in
         1) config_xray "socks" ;;
         2) config_xray "vmess" ;;
