@@ -1,51 +1,21 @@
 #!/bin/bash
 
 DEFAULT_START_PORT=20000                         # 默认起始端口
-DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid) # 默认随机UUID
+DEFAULT_SOCKS_USERNAME="userb"                   # 默认 SOCKS 账号
+DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认 SOCKS 密码
+DEFAULT_WS_PATH=$(cat /proc/sys/kernel/random/uuid)  # 默认随机 UUID
+DEFAULT_PUBLIC_KEY=$(openssl rand -hex 32)      # 生成默认公钥
+DEFAULT_SHORT_ID=$(openssl rand -hex 16)        # 生成默认短 ID
 
-# 自动检测公网 IPv4 和 IPv6 地址
+# 获取公网 IP 地址
 PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
 PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
+echo "公网 IPv4 地址: $PUBLIC_IP_V4"
+echo "公网 IPv6 地址: $PUBLIC_IP_V6"
 
-if [[ -z "$PUBLIC_IP_V4" && -z "$PUBLIC_IP_V6" ]]; then
-    echo "没有检测到公网 IP，手动输入 IP 地址:"
-    read -p "请输入 IP 地址: " MANUAL_IP
-    PUBLIC_IPS=($MANUAL_IP)
-else
-    echo "公网 IPv4 地址: $PUBLIC_IP_V4"
-    echo "公网 IPv6 地址: $PUBLIC_IP_V6"
-    PUBLIC_IPS=($PUBLIC_IP_V4 $PUBLIC_IP_V6)
-fi
-
-# 生成公钥和私钥对用于 Reality
-generate_reality_keys() {
-    # 使用 Xray 生成 Reality 密钥对
-    keys=$(xray x25519)
-    if [[ $? -ne 0 ]]; then
-        echo "生成 Reality 密钥对失败，请检查 Xray 是否正确安装并配置。"
-        exit 1
-    fi
-    private_key=$(echo "$keys" | grep "Private key" | cut -d ' ' -f3)
-    public_key=$(echo "$keys" | grep "Public key" | cut -d ' ' -f3)
-    
-    # 检查是否成功提取公钥和私钥
-    if [[ -z "$public_key" || -z "$private_key" ]]; then
-        echo "未能成功生成公钥和私钥。"
-        exit 1
-    fi
-
-    echo "私钥: $private_key"
-    echo "公钥: $public_key"
-}
-
-# 生成短 ID
-generate_short_id() {
-    echo "$(openssl rand -hex 8)"
-}
-
-# 下载并安装最新的 Xray
+# 定义安装 Xray 的函数
 install_xray() {
-    echo "安装最新 Xray..."
+    echo "安装 Xray..."
     apt-get install unzip -y || yum install unzip -y
     LATEST_XRAY=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep linux-64.zip | cut -d '"' -f 4)
     wget $LATEST_XRAY -O Xray-linux-64.zip
@@ -72,76 +42,126 @@ EOF
     echo "Xray 安装完成."
 }
 
-# 配置 Reality 协议
-config_reality() {
+# 定义配置 Xray 的函数
+config_xray() {
+    config_type=$1
     mkdir -p /etc/xrayL
+    if [ "$config_type" != "socks" ] && [ "$config_type" != "vmess" ] && [ "$config_type" != "reality" ]; then
+        echo "类型错误！仅支持 socks、vmess 和 reality."
+        exit 1
+    fi
 
-    read -p "请输入端口 (默认 $DEFAULT_START_PORT): " PORT
-    PORT=${PORT:-$DEFAULT_START_PORT}
-    UUID=${DEFAULT_UUID}
+    read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
+    START_PORT=${START_PORT:-$DEFAULT_START_PORT}
 
-    # 生成公钥和短 ID
-    generate_reality_keys
-    short_id=$(generate_short_id)
+    if [ "$config_type" == "socks" ]; then
+        read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
+        SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
 
-    # 构建 Reality 配置
-    config_content="[[inbounds]]\n"
-    config_content+="port = $PORT\n"
-    config_content+="protocol = \"vless\"\n"
-    config_content+="tag = \"reality\"\n"
-    config_content+="[inbounds.settings]\n"
-    config_content+="clients = [{id = \"$UUID\"}]\n"
-    config_content+="decryption = \"none\"\n"
-    config_content+="[inbounds.streamSettings]\n"
-    config_content+="network = \"tcp\"\n"
-    config_content+="security = \"reality\"\n"
-    config_content+="[inbounds.streamSettings.realitySettings]\n"
-    config_content+="publicKey = \"$public_key\"\n"  # 使用生成的公钥
-    config_content+="shortIds = [\"$short_id\"]\n\n"  # 使用生成的短 ID
+        read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
+        SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
+
+        config_content+="[[inbounds]]\n"
+        config_content+="port = $START_PORT\n"
+        config_content+="protocol = \"$config_type\"\n"
+        config_content+="tag = \"socks\"\n"
+        config_content+="[inbounds.settings]\n"
+        config_content+="auth = \"password\"\n"
+        config_content+="udp = true\n"
+        config_content+="[[inbounds.settings.accounts]]\n"
+        config_content+="user = \"$SOCKS_USERNAME\"\n"
+        config_content+="pass = \"$SOCKS_PASSWORD\"\n"
+
+    elif [ "$config_type" == "vmess" ]; then
+        read -p "UUID (默认随机): " UUID
+        UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
+        read -p "WebSocket 路径 (默认随机): " WS_PATH
+        WS_PATH=${WS_PATH:-/$(cat /proc/sys/kernel/random/uuid)}
+
+        config_content+="[[inbounds]]\n"
+        config_content+="port = $START_PORT\n"
+        config_content+="protocol = \"$config_type\"\n"
+        config_content+="tag = \"vmess\"\n"
+        config_content+="[inbounds.settings]\n"
+        config_content+="[[inbounds.settings.clients]]\n"
+        config_content+="id = \"$UUID\"\n"
+        config_content+="[inbounds.streamSettings]\n"
+        config_content+="network = \"ws\"\n"
+        config_content+="[inbounds.streamSettings.wsSettings]\n"
+        config_content+="path = \"$WS_PATH\"\n"
+
+    elif [ "$config_type" == "reality" ]; then
+        read -p "输入端口: " REALITY_PORT
+        REALITY_PORT=${REALITY_PORT:-52110}
+        UUID=$(cat /proc/sys/kernel/random/uuid)
+
+        config_content+="[[inbounds]]\n"
+        config_content+="port = $REALITY_PORT\n"
+        config_content+="protocol = \"$config_type\"\n"
+        config_content+="tag = \"reality\"\n"
+        config_content+="[inbounds.settings]\n"
+        config_content+="[[inbounds.settings.clients]]\n"
+        config_content+="id = \"$UUID\"\n"
+        config_content+="[inbounds.streamSettings]\n"
+        config_content+="network = \"tcp\"\n"
+        config_content+="udp = true\n"
+        config_content+="tls = true\n"
+        config_content+="flow = \"xtls-rprx-vision\"\n"
+        config_content+="[inbounds.streamSettings.realityOpts]\n"
+        config_content+="public-key = \"$DEFAULT_PUBLIC_KEY\"\n"
+        config_content+="short-id = \"$DEFAULT_SHORT_ID\"\n"
+
+    fi
 
     config_content+="[[outbounds]]\n"
+    config_content+="sendThrough = \"$PUBLIC_IP_V4\"\n"
     config_content+="protocol = \"freedom\"\n"
-    config_content+="sendThrough = \"${PUBLIC_IP_V4}\"\n"
-    config_content+="tag = \"reality_outbound\"\n"
+    config_content+="tag = \"outbound\"\n\n"
 
     echo -e "$config_content" >/etc/xrayL/config.toml
     systemctl restart xrayL.service
-
-    # 显示 Xray 服务的运行状况
-    echo "Xray 运行状况："
     systemctl --no-pager status xrayL.service
 
     echo ""
-    echo "Reality 配置生成完成"
-    echo "端口: $PORT"
-    echo "UUID: $UUID"
-    echo "公钥: $public_key"
-    echo "短 ID: $short_id"
-    echo "配置文件位于: /etc/xrayL/config.toml"
-    
-    # 输出 Reality-Vision 配置
-    echo -e "\n生成的 Reality-Vision 配置:"
-    echo "- name: Reality-Vision"
-    echo "  type: vless"
-    echo "  server: ${PUBLIC_IP_V4:-$MANUAL_IP}"  # 使用自动识别的公网 IP 或手动输入的 IP
-    echo "  port: $PORT"
-    echo "  uuid: $UUID"
-    echo "  network: tcp"
-    echo "  udp: true"
-    echo "  tls: true"
-    echo "  flow: xtls-rprx-vision"
-    echo "  servername: itunes.apple.com"
-    echo "  client-fingerprint: chrome"
-    echo "  reality-opts:"
-    echo "    public-key: $public_key"  # 使用生成的公钥
-    echo "    short-id: $short_id"      # 使用生成的短 ID
+    echo "生成 $config_type 配置完成"
+    echo "起始端口: $START_PORT"
+    echo "结束端口: $((START_PORT + 1))"
+    if [ "$config_type" == "socks" ]; then
+        echo "SOCKS 账号: $SOCKS_USERNAME"
+        echo "SOCKS 密码: $SOCKS_PASSWORD"
+    elif [ "$config_type" == "vmess" ]; then
+        echo "UUID: $UUID"
+        echo "WebSocket 路径: $WS_PATH"
+    elif [ "$config_type" == "reality" ]; then
+        echo "UUID: $UUID"
+        echo "公钥: $DEFAULT_PUBLIC_KEY"
+        echo "短 ID: $DEFAULT_SHORT_ID"
+    fi
+
     echo ""
 }
 
-# 主函数
 main() {
-    [ -x "$(command -v xrayL)" ] || install_xray
-    config_reality
+    if [ ! -x "/usr/local/bin/xrayL" ]; then
+        install_xray
+    fi
+
+    if [ $# -eq 1 ]; then
+        config_type="$1"
+    else
+        read -p "选择生成的节点类型 (socks/vmess/reality): " config_type
+    fi
+
+    if [ "$config_type" == "vmess" ]; then
+        config_xray "vmess"
+    elif [ "$config_type" == "socks" ]; then
+        config_xray "socks"
+    elif [ "$config_type" == "reality" ]; then
+        config_xray "reality"
+    else
+        echo "未正确选择类型，使用默认 socks 配置."
+        config_xray "socks"
+    fi
 }
 
 main "$@"
