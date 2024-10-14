@@ -1,13 +1,4 @@
-- 强烈建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
-- 安装完成后终端输入 mianyang 可再次调用本脚本
-
-
-# 新增功能（排序从新到旧）
-- 新增sing-box正式版和测试版版本切换
-- 任意门，ss解锁流媒体，任意门中转（仅在二合一版本中）
-- 全面适配sing-box1.8.0
-- 新增更多warp解锁功能，geo和domain_keword,全局接管等
-- 新添加了hysteria2端口跳跃功能
+- 建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
 
 # 简介
 - Reality Hysteria2 （vmess ws）一键安装脚本
@@ -15,18 +6,23 @@
 ## 使用教程
 ### hysteria2 脚本
 ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria2/raw/refs/heads/main/H3hy2.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh)
 ```
 ### reality和hysteria2 vmess ws三合一脚本
 
 ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria2/raw/main/beta.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/beta.sh)
 ```
 
 ### reality hysteria2二合一脚本
 
 ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria/raw/main/install.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/install.sh)
+```
+### xary  vmess+ws or socks 脚本
+
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/xary.sh)
 ```
 ## 尝鲜区
 ### tcp-brutal reality(双端sing-box 1.7.0及以上可用)
@@ -34,12 +30,12 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria/raw/mai
 [文档](https://github.com/apernet/tcp-brutal/blob/master/README.zh.md)
 
 ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/tcp-brutal-reality.sh)
 ```
 ### brutal reality vision reality hysteria2三合一(双端sing-box 1.7.0及以上可用)，warp分类，端口跳跃等功能
 
 ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-reality-hysteria2/raw/main/brutal-reality-hysteria.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/brutal-reality-hysteria.sh)
 ```
 
 ## 功能
