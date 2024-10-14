@@ -1,7 +1,7 @@
 - 建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
 
 # 简介
-- Reality Hysteria2 （vmess ws）一键安装脚本
+一键安装脚本
   
 ## 使用教程
 ### hysteria2 脚本
