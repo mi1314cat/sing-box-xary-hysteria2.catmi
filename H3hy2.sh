@@ -18,6 +18,19 @@ print_with_delay() {
     done
     echo ""
 }
+
+# 生成端口的函数
+generate_port() {
+    local protocol="$1"
+    while :; do
+        port=$((RANDOM % 10001 + 10000))
+        read -p "请为 ${protocol} 输入监听端口(默认为随机生成): " user_input
+        port=${user_input:-$port}
+        ss -tuln | grep -q ":$port\b" || { echo "$port"; return $port; }
+        echo "端口 $port 被占用，请输入其他端口"
+    done
+}
+
 print_with_delay "**************Hysteria 2.catmi*************" 0.03
 # 自动安装 Hysteria 2
 print_with_delay "正在安装 Hysteria 2..." 0.03
@@ -35,7 +48,7 @@ openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
 AUTH_PASSWORD=$(openssl rand -base64 16)
 
 # 提示输入监听端口号
-read -p "请输入监听端口: " PORT
+PORT=$(generate_port "Hysteria")
 
 # 获取公网 IP 地址
 PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
@@ -76,8 +89,6 @@ masquerade:
   proxy:
     url: https://bing.com
     rewriteHost: true
-
-
 EOF
 
 # 重启 Hysteria 服务以应用配置
@@ -91,7 +102,7 @@ systemctl enable hysteria-server.service
 # 创建客户端配置文件目录
 mkdir -p /root/hy2
 
-# 生成客户端配置文件，使用用户选择的公网 IP 地址和服务端端口
+# 生成客户端配置文件
 print_with_delay "生成客户端配置文件..." 0.03
 cat << EOF > /root/hy2/config.yaml
 port: 7890
