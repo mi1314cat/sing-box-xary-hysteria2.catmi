@@ -48,6 +48,15 @@ EOF
     echo "Xray 安装完成."
 }
 
+# 检查是否为公网IP
+is_public_ip() {
+    local ip="$1"
+    if [[ "$ip" =~ ^10\. ]] || [[ "$ip" =~ ^172\.1[6-9]\. ]] || [[ "$ip" =~ ^172\.2[0-9]\. ]] || [[ "$ip" =~ ^172\.3[0-1]\. ]] || [[ "$ip" =~ ^192\.168\. ]] || [[ "$ip" =~ ^127\. ]] || [[ "$ip" =~ ^169\.254\. ]]; then
+        return 1  # 私有或保留IP
+    fi
+    return 0  # 公网IP
+}
+
 # 生成配置内容的函数
 generate_config_content() {
     local config_type="$1"
@@ -106,12 +115,18 @@ config_xray() {
         exit 1
     fi
 
-    # 获取 IP 地址
+    # 获取公网 IP 地址
     mapfile -t IP_ADDRESSES < <(ip -6 addr show | grep "inet6" | awk '{print $2}' | cut -d'/' -f1)
-    IP_COUNT=${#IP_ADDRESSES[@]}
+    PUBLIC_IP_ADDRESSES=()
+    for ip in "${IP_ADDRESSES[@]}"; do
+        if is_public_ip "$ip"; then
+            PUBLIC_IP_ADDRESSES+=("$ip")
+        fi
+    done
+    IP_COUNT=${#PUBLIC_IP_ADDRESSES[@]}
     
     if [ "$IP_COUNT" -eq 0 ]; then
-        echo "未找到可用的 IPv6 地址。"
+        echo "未找到可用的公网 IPv6 地址。"
         exit 1
     fi
 
