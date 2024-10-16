@@ -25,6 +25,12 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/xary.sh)
 ```
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/xary.sh) socks
+```
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/xary.sh) vmess
+```
 ## 尝鲜区
 ### tcp-brutal reality(双端sing-box 1.7.0及以上可用)
 
