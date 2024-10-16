@@ -14,6 +14,14 @@ DEFAULT_SOCKS_PASSWORD="passwordb"
 DEFAULT_WS_PATH="/ws$(openssl rand -hex 8)"
 DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid)
 
+# 设置 IP 地址数组
+IP_ADDRESSES=("192.168.1.1" "192.168.1.2" "192.168.1.3")  # 示例 IP 地址
+
+# 随机生成 WebSocket 路径
+generate_random_ws_path() {
+    echo "/ws$(openssl rand -hex 8)"
+}
+
 # 下载并安装最新的 Xray
 install_xray() {
     echo "安装最新 Xray..."
@@ -86,7 +94,6 @@ generate_config_content() {
     echo -e "$content"
 }
 
-# 配置 Xray 的主函数
 config_xray() {
     config_type="$1"
     mkdir -p /etc/xrayL
@@ -125,6 +132,7 @@ config_xray() {
     echo "生成 $config_type 配置完成"
     echo "起始端口:$START_PORT"
     echo "结束端口:$(($START_PORT + ${#IP_ADDRESSES[@]} - 1))"
+    echo "IP 地址数量: ${#IP_ADDRESSES[@]}"  # 调试信息
     if [ "$config_type" == "socks" ]; then
         echo "socks账号:$SOCKS_USERNAME"
         echo "socks密码:$SOCKS_PASSWORD"
@@ -135,7 +143,6 @@ config_xray() {
     echo ""
 }
 
-# 主函数
 main() {
     [ -x "$(command -v xrayL)" ] || install_xray
     if [ $# -eq 1 ]; then
