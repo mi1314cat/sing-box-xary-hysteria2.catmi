@@ -4,7 +4,7 @@ printf "\e[92m"
 printf "                       |\\__/,|   (\\\\ \n"
 printf "                     _.|o o  |_   ) )\n"
 printf "       -------------(((---(((-------------------\n"
-printf "                     catmi.Hysteria 2 \n"
+printf "                    catmi.Hysteria 2 \n"
 printf "       -----------------------------------------\n"
 printf "\e[0m"
 
@@ -152,13 +152,13 @@ proxy-groups:
     type: select
     proxies:
       - 自动选择
-      - Hysteria2
+      - Hy2-Hysteria2
       - DIRECT
 
   - name: 自动选择
     type: url-test
     proxies:
-      - Hysteria2
+      - Hy2-Hysteria2
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     tolerance: 50
