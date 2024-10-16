@@ -4,7 +4,7 @@ printf "\e[92m"
 printf "                       |\\__/,|   (\\\\ \n"
 printf "                     _.|o o  |_   ) )\n"
 printf "       -------------(((---(((-------------------\n"
-printf "                       catmi \n"
+printf "                     catmi.xary \n"
 printf "       -----------------------------------------\n"
 printf "\e[0m"
 DEFAULT_START_PORT=20000                         # 默认起始端口
