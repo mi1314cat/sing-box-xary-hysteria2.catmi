@@ -14,22 +14,15 @@ DEFAULT_SOCKS_PASSWORD="passwordb"
 DEFAULT_WS_PATH="/ws$(openssl rand -hex 8)"
 DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid)
 
-# 随机生成 WebSocket 路径
-generate_random_ws_path() {
-    echo "/ws$(openssl rand -hex 8)"
-}
-
 # 下载并安装最新的 Xray
 install_xray() {
     echo "安装最新 Xray..."
     apt-get install unzip -y || yum install unzip -y
     LATEST_XRAY=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep linux-64.zip | cut -d '"' -f 4)
-    wget "$LATEST_XRAY" -O Xray-linux-64.zip || { echo "下载失败！"; exit 1; }
+    wget $LATEST_XRAY -O Xray-linux-64.zip || { echo "下载失败！"; exit 1; }
     unzip Xray-linux-64.zip
     mv xray /usr/local/bin/xrayL
     chmod +x /usr/local/bin/xrayL
-
-    # 创建 systemd 服务文件
     cat <<EOF >/etc/systemd/system/xrayL.service
 [Unit]
 Description=XrayL Service
@@ -44,14 +37,13 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-
     systemctl daemon-reload
     systemctl enable xrayL.service
     systemctl start xrayL.service
     echo "Xray 安装完成."
 }
 
-# 生成配置内容
+# 生成配置内容的函数
 generate_config_content() {
     local config_type="$1"
     local start_port="$2"
@@ -67,7 +59,6 @@ generate_config_content() {
         content+="protocol = \"$config_type\"\n"
         content+="tag = \"tag_$((i + 1))\"\n"
         content+="[inbounds.settings]\n"
-
         if [ "$config_type" == "socks" ]; then
             content+="auth = \"password\"\n"
             content+="udp = true\n"
@@ -83,7 +74,6 @@ generate_config_content() {
             content+="[inbounds.streamSettings.wsSettings]\n"
             content+="path = \"$ws_path\"\n\n"
         fi
-
         content+="[[outbounds]]\n"
         content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
         content+="protocol = \"freedom\"\n"
@@ -96,40 +86,34 @@ generate_config_content() {
     echo -e "$content"
 }
 
-# 配置 Xray
+# 配置 Xray 的主函数
 config_xray() {
-    local config_type="$1"
+    config_type="$1"
     mkdir -p /etc/xrayL
-
-    if [[ "$config_type" != "socks" && "$config_type" != "vmess" ]]; then
+    if [ "$config_type" != "socks" ] && [ "$config_type" != "vmess" ]; then
         echo "类型错误！仅支持socks和vmess."
         exit 1
     fi
 
     read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
     START_PORT=${START_PORT:-$DEFAULT_START_PORT}
-
     if ! [[ "$START_PORT" =~ ^[0-9]+$ ]]; then
         echo "无效的端口号，必须是数字。"
         exit 1
     fi
 
-    local config_content
     if [ "$config_type" == "socks" ]; then
         read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
         SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
 
         read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
         SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
-
         config_content=$(generate_config_content "socks" "$START_PORT" "$SOCKS_USERNAME" "$SOCKS_PASSWORD" "" "")
     elif [ "$config_type" == "vmess" ]; then
         read -p "UUID (默认随机): " UUID
         UUID=${UUID:-$DEFAULT_UUID}
-
         read -p "WebSocket 路径 (默认 $DEFAULT_WS_PATH): " WS_PATH
         WS_PATH=${WS_PATH:-$DEFAULT_WS_PATH}
-
         config_content=$(generate_config_content "vmess" "$START_PORT" "" "" "$UUID" "$WS_PATH")
     fi
 
@@ -141,7 +125,6 @@ config_xray() {
     echo "生成 $config_type 配置完成"
     echo "起始端口:$START_PORT"
     echo "结束端口:$(($START_PORT + ${#IP_ADDRESSES[@]} - 1))"
-
     if [ "$config_type" == "socks" ]; then
         echo "socks账号:$SOCKS_USERNAME"
         echo "socks密码:$SOCKS_PASSWORD"
@@ -155,13 +138,11 @@ config_xray() {
 # 主函数
 main() {
     [ -x "$(command -v xrayL)" ] || install_xray
-
     if [ $# -eq 1 ]; then
         config_type="$1"
     else
         read -p "选择生成的节点类型 (socks/vmess): " config_type
     fi
-
     if [ "$config_type" == "vmess" ]; then
         config_xray "vmess"
     elif [ "$config_type" == "socks" ]; then
