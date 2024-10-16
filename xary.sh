@@ -14,9 +14,6 @@ DEFAULT_SOCKS_PASSWORD="passwordb"
 DEFAULT_WS_PATH="/ws$(openssl rand -hex 8)"
 DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid)
 
-# 设置 IP 地址数组
-IP_ADDRESSES=("192.168.1.1" "192.168.1.2" "192.168.1.3")  # 示例 IP 地址
-
 # 随机生成 WebSocket 路径
 generate_random_ws_path() {
     echo "/ws$(openssl rand -hex 8)"
@@ -109,6 +106,15 @@ config_xray() {
         exit 1
     fi
 
+    # 获取 IP 地址
+    mapfile -t IP_ADDRESSES < <(ip -6 addr show | grep "inet6" | awk '{print $2}' | cut -d'/' -f1)
+    IP_COUNT=${#IP_ADDRESSES[@]}
+    
+    if [ "$IP_COUNT" -eq 0 ]; then
+        echo "未找到可用的 IPv6 地址。"
+        exit 1
+    fi
+
     if [ "$config_type" == "socks" ]; then
         read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
         SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
@@ -131,8 +137,7 @@ config_xray() {
     echo ""
     echo "生成 $config_type 配置完成"
     echo "起始端口:$START_PORT"
-    echo "结束端口:$(($START_PORT + ${#IP_ADDRESSES[@]} - 1))"
-    echo "IP 地址数量: ${#IP_ADDRESSES[@]}"  # 调试信息
+    echo "结束端口:$(($START_PORT + IP_COUNT - 1))"
     if [ "$config_type" == "socks" ]; then
         echo "socks账号:$SOCKS_USERNAME"
         echo "socks密码:$SOCKS_PASSWORD"
