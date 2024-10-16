@@ -31,6 +31,10 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/xary.sh) vmess
 ```
+## 解决DNS泄露，无分流群组
+```
+https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/nodnsleak.ini
+```
 ## 尝鲜区
 ### tcp-brutal reality(双端sing-box 1.7.0及以上可用)
 
