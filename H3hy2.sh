@@ -4,7 +4,7 @@ printf "\e[92m"
 printf "                       |\\__/,|   (\\\\ \n"
 printf "                     _.|o o  |_   ) )\n"
 printf "       -------------(((---(((-------------------\n"
-printf "                       catmi \n"
+printf "                     catmi.Hysteria 2 \n"
 printf "       -----------------------------------------\n"
 printf "\e[0m"
 
@@ -124,12 +124,12 @@ dns:
       - 240.0.0.0/4
 
 proxies:        
-  - name: Hysteria2
+  - name: Hy2-Hysteria2
     server: $PUBLIC_IP
     port: $PORT
     type: hysteria2
-    up: "40 Mbps"
-    down: "120 Mbps"
+    up: "45 Mbps"
+    down: "150 Mbps"
     sni: bing.com
     password: $AUTH_PASSWORD
     skip-cert-verify: true
