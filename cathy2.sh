@@ -359,33 +359,51 @@ EOF
 # 流量管理
 traffic_management() {
     while true; do
-        # 获取服务状态
-        hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
-        if [ "${hy2_traffic_monitor_status}" == "active" ]; then
-            hy2_traffic_monitor_status_text="${GREEN}已启用${PLAIN}"
-        else
-            hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
-        fi
+    echo "调试: 正在获取流量监控服务状态..."
+    hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
+    
+    if [ "${hy2_traffic_monitor_status}" == "active" ]; then
+        hy2_traffic_monitor_status_text="${GREEN}已启用${PLAIN}"
+    else
+        hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
+    fi
+    echo "调试: 流量监控服务状态: ${hy2_traffic_monitor_status_text}"
 
-        # 获取流量信息
-        if systemctl is-active --quiet hysteria-server.service; then
-            read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic 2>/dev/null)
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}获取流量信息失败！${PLAIN}"
-                up_gb="0"
-                down_gb="0"
-            fi
-            total_gb=$(echo "$up_gb + $down_gb" | bc)
-        else
+    echo "调试: 正在获取流量信息..."
+    if systemctl is-active --quiet hysteria-server.service; then
+        read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic 2>/dev/null)
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}获取流量信息失败！${PLAIN}"
             up_gb="0"
             down_gb="0"
-            total_gb="0"
         fi
+        
+        total_gb=$(echo "$up_gb + $down_gb" | bc)
+        echo "调试: 上行流量: ${up_gb}GB, 下行流量: ${down_gb}GB, 总流量: ${total_gb}GB"
+    else
+        up_gb="0"
+        down_gb="0"
+        total_gb="0"
+        echo "调试: Hysteria 服务器未启用，流量设置为0"
+    fi
 
-        limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
-        remaining_gb=$(echo "$limit - $total_gb" | bc)
+    echo "调试: 正在获取流量限制..."
+    limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
+    if [ -z "$limit" ]; then
+        echo -e "${RED}流量限制未找到！${PLAIN}"
+        limit="0"
+    fi
 
-        echo -e "
+    remaining_gb=$(echo "$limit - $total_gb" | bc)
+    echo "调试: 流量限制: ${limit}GB, 剩余流量: ${remaining_gb}GB"
+
+    # 这里可以插入其他处理逻辑...
+    
+    echo -e "流量监控信息:\n上行流量: ${up_gb}GB\n下行流量: ${down_gb}GB\n总流量: ${total_gb}GB\n流量限制: ${limit}GB\n剩余流量: ${remaining_gb}GB"
+    
+    sleep 5  # 可选：每5秒更新一次
+done
   ${GREEN}流量管理${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 设置流量限制
