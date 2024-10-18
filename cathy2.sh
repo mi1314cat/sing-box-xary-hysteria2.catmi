@@ -77,13 +77,13 @@ EOF
 install_base() {
     if [[ -f /etc/debian_version ]]; then
         apt update -y
-        apt install -y curl wget tar openssl nano
+        apt install -y curl wget tar openssl nano bc
         if [[ $? -ne 0 ]]; then
             print_error "基础依赖安装失败"
             exit 1
         fi
     elif [[ -f /etc/redhat-release ]]; then
-        yum install -y curl wget tar openssl nano
+        yum install -y curl wget tar openssl nano bc
         if [[ $? -ne 0 ]]; then
             print_error "基础依赖安装失败"
             exit 1
@@ -208,7 +208,7 @@ proxies:
     server: ${IP}
     port: ${PORT}
     type: hysteria2
-    up: "45 Mbps"
+    up: "45Mbps"
     down: "150 Mbps"
     sni: bing.com
     password: ${AUTH_PASSWORD}
@@ -307,7 +307,7 @@ get_traffic() {
     if [ $? -ne 0 ]; then
         echo "0 0"
         return
-    }
+    fi
     
     # 提取上传和下载流量(转换为GB)
     local upload=$(echo "$current_stats" | grep "Upload" | awk '{print $2}' | numfmt --from=iec)
@@ -405,18 +405,18 @@ traffic_management() {
         echo -e "
   ${GREEN}流量管理${PLAIN}
   ----------------------
-  流量管理服务状态: ${hy2_traffic_monitor_status_text}
-  流量限制: ${limit}GB
-  已使用的流量: ${total_gb}GB
-  剩余流量: ${remaining_gb}GB
-  ----------------------
   ${GREEN}1.${PLAIN} 设置流量限制
   ${GREEN}2.${PLAIN} 查看当前流量
   ${GREEN}3.${PLAIN} 查看流量日志
   ${GREEN}4.${PLAIN} 重置流量统计
   ${GREEN}5.${PLAIN} 开启/关闭流量管理
   ${GREEN}6.${PLAIN} 设置流量重置方式
-  
+  ${GREEN}0.${PLAIN} 返回主菜单
+  ----------------------
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已使用的流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
   ----------------------"
         
         read -p "请输入选项 [0-6]: " choice
@@ -561,12 +561,6 @@ show_menu() {
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
-  Hysteria 2 服务状态: ${hysteria_server_status_text}
-  流量管理服务状态: ${hy2_traffic_monitor_status_text}
-  流量限制: ${limit}GB
-  已使用的流量: ${total_gb}GB
-  剩余流量: ${remaining_gb}GB
-  ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
   ${GREEN}2.${PLAIN} 卸载 Hysteria 2
   ${GREEN}3.${PLAIN} 更新 Hysteria 2
@@ -574,6 +568,12 @@ show_menu() {
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
+  ----------------------
+  Hysteria 2 服务状态: ${hysteria_server_status_text}
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已使用的流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
   ----------------------
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------"
