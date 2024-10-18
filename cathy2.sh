@@ -65,7 +65,7 @@ EOF
     print_info "快捷方式 'catmihy2' 已创建，可使用 'catmihy2' 命令运行脚本"
 }
 
-# 安装 Hysteria 2
+# 安装 Hysteria.2
 install_hysteria() {
     print_info "开始安装 Hysteria 2..."
 
@@ -481,8 +481,8 @@ show_menu() {
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
-    hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; elseecho -e "${RED}未启动${PLAIN}"; fi)
-    hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; thenecho -e "${GREEN}启动${PLAIN}"; elseecho -e "${RED}未启动${PLAIN}"; fi)
+    hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
+    hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
