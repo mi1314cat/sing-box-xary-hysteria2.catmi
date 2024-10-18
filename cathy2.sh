@@ -19,7 +19,7 @@ show_banner() {
     clear
     cat << "EOF"
                        |\__/,|   (\\
-                     _.|o O  |_   ) )
+                     _.|o o  |_   ) )
        -------------(((---(((-------------------
                     catmi.Hysteria 2 
        -----------------------------------------
@@ -297,6 +297,8 @@ if [ -f "$TRAFFIC_CONFIG" ]; then
     source $TRAFFIC_CONFIG
 else
     echo "TRAFFIC_LIMIT=1000" > $TRAFFIC_CONFIG  # 默认1000GB
+    echo "TRAFFIC_MANAGEMENT_ENABLED=false" >> $TRAFFIC_CONFIG  # 默认关闭流量管理
+    echo "TRAFFIC_RESET_MODE=monthly" >> $TRAFFIC_CONFIG  # 默认每月重置
     source $TRAFFIC_CONFIG
 fi
 
@@ -328,7 +330,7 @@ check_traffic() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Upload: ${up_gb}GB, Download: ${down_gb}GB, Total: ${total_gb}GB" >> $LOG_FILE
     
     # 检查是否超过限制
-    if (( $(echo "$total_gb > $TRAFFIC_LIMIT" | bc -l) )); then
+    if [[ "$TRAFFIC_MANAGEMENT_ENABLED" == "true" ]] && (( $(echo "$total_gb > $TRAFFIC_LIMIT" | bc -l) )); then
         echo -e "${RED}流量超过限制 ${TRAFFIC_LIMIT}GB，正在停止服务...${PLAIN}"
         systemctl stop hysteria-server.service
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Traffic limit exceeded. Service stopped." >> $LOG_FILE
@@ -336,8 +338,31 @@ check_traffic() {
     fi
 }
 
+# 重置流量统计
+reset_traffic() {
+    systemctl restart hysteria-server.service
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Traffic statistics reset." >> $LOG_FILE
+    echo -e "${GREEN}流量统计已重置${PLAIN}"
+}
+
+# 检查是否需要重置流量统计
+check_reset() {
+    if [[ "$TRAFFIC_MANAGEMENT_ENABLED" == "true" ]]; then
+        if [[ "$TRAFFIC_RESET_MODE" == "monthly" ]]; then
+            if [[ $(date +%d) -eq 1 ]]; then
+                reset_traffic
+            fi
+        elif [[ "$TRAFFIC_RESET_MODE" == "30days" ]]; then
+            if [[ $(date +%s) -ge $(($(date +%s) - 2592000)) ]]; then
+                reset_traffic
+            fi
+        fi
+    fi
+}
+
 # 主循环
 while true; do
+    check_reset
     check_traffic
     sleep 60  # 每分钟检查一次
 done
@@ -376,10 +401,12 @@ traffic_management() {
   ${GREEN}2.${PLAIN} 查看当前流量
   ${GREEN}3.${PLAIN} 查看流量日志
   ${GREEN}4.${PLAIN} 重置流量统计
+  ${GREEN}5.${PLAIN} 开启/关闭流量管理
+  ${GREEN}6.${PLAIN} 设置流量重置方式
   ${GREEN}0.${PLAIN} 返回主菜单
   ----------------------"
         
-        read -p "请输入选项 [0-4]: " choice
+        read -p "请输入选项 [0-6]: " choice
         case "${choice}" in
             0) break ;;
             1) 
@@ -416,6 +443,40 @@ traffic_management() {
                 systemctl restart hysteria-server.service
                 systemctl restart hy2-traffic-monitor.service
                 echo -e "${GREEN}流量统计已重置${PLAIN}"
+                ;;
+            5)
+                current_status=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_MANAGEMENT_ENABLED | cut -d= -f2)
+                if [[ "$current_status" == "true" ]]; then
+                    echo "TRAFFIC_MANAGEMENT_ENABLED=false" > /etc/hysteria/traffic_config
+                    echo -e "${GREEN}流量管理已关闭${PLAIN}"
+                    systemctl stop hy2-traffic-monitor.service
+                else
+                    echo "TRAFFIC_MANAGEMENT_ENABLED=true" > /etc/hysteria/traffic_config
+                    echo -e "${GREEN}流量管理已开启${PLAIN}"
+                    systemctl start hy2-traffic-monitor.service
+                fi
+                ;;
+            6)
+                echo -e "
+  ${GREEN}流量重置方式${PLAIN}
+  ----------------------
+  ${GREEN}1.${PLAIN} 每月的第一天重置
+  ${GREEN}2.${PLAIN} 每30天重置
+  ${GREEN}0.${PLAIN} 返回上一级
+  ----------------------"
+                read -p "请输入选项 [0-2]: " reset_choice
+                case "${reset_choice}" in
+                    0) break ;;
+                    1)
+                        echo "TRAFFIC_RESET_MODE=monthly" > /etc/hysteria/traffic_config
+                        echo -e "${GREEN}流量重置方式已设置为每月的第一天重置${PLAIN}"
+                        ;;
+                    2)
+                        echo "TRAFFIC_RESET_MODE=30days" > /etc/hysteria/traffic_config
+                        echo -e "${GREEN}流量重置方式已设置为每30天重置${PLAIN}"
+                        ;;
+                    *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
+                esac
                 ;;
             *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
         esac
