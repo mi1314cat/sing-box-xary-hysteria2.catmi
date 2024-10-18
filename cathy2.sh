@@ -280,25 +280,60 @@ modify_config() {
     read -p "请输入新的密码 (默认随机生成): " new_password
     new_password=${new_password:-$(openssl rand -base64 16)}
 
+    # 输出修改前的配置
+    echo "修改前服务端配置内容:"
+    cat /etc/hysteria/config.yaml
+
     # 修改服务端配置
-    sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
-    sed -i "s/^password: .*/password: ${new_password}/" /etc/hysteria/config.yaml
+    if sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml; then
+        echo "成功修改服务端的端口号"
+    else
+        echo "修改服务端的端口号失败"
+        return 1
+    fi
+
+    if sed -i "s/^password: .*/password: ${new_password}/" /etc/hysteria/config.yaml; then
+        echo "成功修改服务端的密码"
+    else
+        echo "修改服务端的密码失败"
+        return 1
+    fi
 
     # 修改客户端配置
-    sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
-    sed -i "s/^password: .*/password: ${new_password}/" /root/hy2/config.yaml
+    if sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml; then
+        echo "成功修改客户端的端口号"
+    else
+        echo "修改客户端的端口号失败"
+        return 1
+    fi
 
-    # 调试信息
-    echo "调试: 服务端配置文件内容"
+    if sed -i "s/^password: .*/password: ${new_password}/" /root/hy2/config.yaml; then
+        echo "成功修改客户端的密码"
+    else
+        echo "修改客户端的密码失败"
+        return 1
+    fi
+
+    # 输出修改后的配置
+    echo "修改后服务端配置内容:"
     cat /etc/hysteria/config.yaml
-    echo "调试: 客户端配置文件内容"
+    echo "修改后客户端配置内容:"
     cat /root/hy2/config.yaml
 
-    print_info "配置已修改为："
-    print_info "端口：${new_port}"
-    print_info "密码：${new_password}"
-    systemctl restart hysteria-server.service
+    echo "配置已修改为："
+    echo "端口：${new_port}"
+    echo "密码：${new_password}"
+
+    # 重启服务
+    systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
 }
+
+# 确保生成端口函数存在
+generate_port() {
+    # 这里是一个简单的端口生成函数，你可以根据需要修改
+    echo $((RANDOM % 65535 + 1))
+}
+
 
 # 主菜单
 show_menu() {
