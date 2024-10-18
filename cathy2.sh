@@ -67,7 +67,7 @@ generate_port() {
 create_shortcut() {
     cat > /usr/local/bin/catmihy2 << 'EOF'
 #!/bin/bash
-bash <(curl -fsSL https://raw.githubusercontent.com/你的GitHub用户名/hysteria2-script/main/install.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
 EOF
     chmod +x /usr/local/bin/catmihy2
     print_info "快捷方式 'catmihy2' 已创建，现在可以直接使用 'catmihy2' 命令运行脚本"
@@ -166,9 +166,7 @@ masquerade:
     url: https://bing.com
     rewriteHost: true
 
-bandwidth:
-  up: 1 gbps
-  down: 1 gbps
+
 EOF
 }
 
@@ -210,8 +208,8 @@ proxies:
     server: ${IP}
     port: ${PORT}
     type: hysteria2
-    up: "100 Mbps"
-    down: "100 Mbps"
+    up: "45 Mbps"
+    down: "150 Mbps"
     sni: bing.com
     password: ${AUTH_PASSWORD}
     skip-cert-verify: true
@@ -333,6 +331,9 @@ get_traffic() {
 check_traffic() {
     read up_gb down_gb <<< $(get_traffic)
     total_gb=$(echo "$up_gb + $down_gb" | bc)
+    
+    # 记录流量
+    echo "$(date '+%Y-%m-%d %H:%M:%S high-speed data allowance. Once you've used your high-speed data, you'll experience reduced internet speeds. For AT&T Internet 100000000..."
     
     # 记录流量
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Upload: ${up_gb}GB, Download: ${down_gb}GB, Total: ${total_gb}GB" >> $LOG_FILE
