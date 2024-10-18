@@ -432,7 +432,6 @@ EOF
     systemctl stop hy2-traffic-monitor.service  # 默认禁用
 }
 
-
 # 流量管理
 traffic_management() {
     while true; do
@@ -445,6 +444,14 @@ traffic_management() {
             hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
         fi
         echo "调试: 流量监控服务状态: ${hy2_traffic_monitor_status_text}"
+
+        # 确保 traffic_config 文件存在
+        TRAFFIC_CONFIG="/etc/hysteria/traffic_config"
+        if [ ! -f "$TRAFFIC_CONFIG" ]; then
+            echo "TRAFFIC_LIMIT=1000" > $TRAFFIC_CONFIG  # 默认 1000GB
+            echo "TRAFFIC_MANAGEMENT_ENABLED=false" >> $TRAFFIC_CONFIG  # 默认禁用
+            echo "TRAFFIC_RESET_MODE=monthly" >> $TRAFFIC_CONFIG  # 默认每月重置
+        fi
 
         # 调用获取流量信息的函数
         get_traffic_info
@@ -552,6 +559,7 @@ traffic_management() {
 }
 
 
+
 # 卸载 Hysteria 2
 uninstall_hysteria() {
     print_info "卸载 Hysteria 2..."
@@ -619,6 +627,14 @@ show_menu() {
         hy2_traffic_monitor_status_text="${GREEN}已启用${PLAIN}"
     else
         hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
+    fi
+
+    # 确保 traffic_config 文件存在
+    TRAFFIC_CONFIG="/etc/hysteria/traffic_config"
+    if [ ! -f "$TRAFFIC_CONFIG" ]; then
+        echo "TRAFFIC_LIMIT=1000" > $TRAFFIC_CONFIG  # 默认 1000GB
+        echo "TRAFFIC_MANAGEMENT_ENABLED=false" >> $TRAFFIC_CONFIG  # 默认禁用
+        echo "TRAFFIC_RESET_MODE=monthly" >> $TRAFFIC_CONFIG  # 默认每月重置
     fi
 
     # 调用获取流量信息的函数
