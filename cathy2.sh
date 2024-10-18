@@ -65,12 +65,7 @@ EOF
     print_info "快捷方式 'catmihy2' 已创建，可使用 'catmihy2' 命令运行脚本"
 }
 
-# 安装 Hysteria 2
-install_hysteria() {
-    print_info "开始安装 Hysteria 2..."
-  bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh)
-   
-}
+
 
 # 卸载 Hysteria 2
 uninstall_hysteria() {
@@ -157,20 +152,14 @@ modify_config() {
     echo "密码：${new_password}"
 
     # 重启服务
-    if systemctl restart hysteria-server.service; then
-        echo "服务已重启"
-    else
-        echo "重启服务失败"
-    fi
+    systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
 }
 
-
-
-
-    # 重启服务
-    systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
-
-
+# 确保生成端口函数存在
+generate_port() {
+    # 这里是一个简单的端口生成函数，你可以根据需要修改
+    echo $((RANDOM % 65535 + 1))
+}
 
 
 # 主菜单
@@ -198,7 +187,7 @@ show_menu() {
     
     case "${choice}" in
         0) exit 0 ;;
-        1) install_hysteria ;;
+        1) bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh) ;;
         2) uninstall_hysteria ;;
         3) update_hysteria ;;
         4) systemctl restart hysteria-server.service ;;
