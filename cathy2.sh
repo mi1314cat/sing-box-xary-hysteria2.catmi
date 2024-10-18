@@ -540,6 +540,7 @@ modify_port() {
 
 # 显示菜单
 show_menu() {
+     echo "正在显示菜单..."
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
@@ -608,6 +609,7 @@ show_menu() {
     echo "按回车键继续..."  # 调试信息
     read -p ""  # 读取回车键
     echo
+     echo "菜单显示结束."  # 调试信息
 }
 
 # 主程序
