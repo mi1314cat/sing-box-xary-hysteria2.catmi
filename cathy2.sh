@@ -261,9 +261,12 @@ fi
 
 # 获取当前流量
 get_traffic() {
+    echo "调试: 进入 get_traffic 函数"
     # 使用 hysteria 命令获取实时流量统计
     local current_stats=$(hysteria stats 2>/dev/null)
+    echo "调试: hysteria stats 输出: ${current_stats}"
     if [ $? -ne 0 ]; then
+        echo "调试: hysteria stats 命令执行失败"
         echo "0 0"
         return
     fi
@@ -272,20 +275,29 @@ get_traffic() {
     local upload=$(echo "$current_stats" | grep "Upload" | awk '{print $2}' | numfmt --from=iec)
     local download=$(echo "$current_stats" | grep "Download" | awk '{print $2}' | numfmt --from=iec)
     
+    echo "调试: 上传流量: ${upload}"
+    echo "调试: 下载流量: ${download}"
+    
     # 确保变量为数字
     if ! [[ "$upload" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo "调试: 上传流量不是数字，设置为0"
         upload=0
     fi
     if ! [[ "$download" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo "调试: 下载流量不是数字，设置为0"
         download=0
     fi
     
     upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc)
     download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc)
     
+    echo "调试: 上传流量 (GB): ${upload_gb}"
+    echo "调试: 下载流量 (GB): ${download_gb}"
+    
     echo "$upload_gb $download_gb"
 }
-
+    
+    
 # 检查流量并记录
 check_traffic() {
     read up_gb down_gb <<< $(get_traffic)
@@ -356,8 +368,7 @@ EOF
     systemctl stop hy2-traffic-monitor.service  # 默认禁用
 }
 
-# 流量管理
-# 流量管理
+
 # 流量管理
 traffic_management() {
     while true; do
@@ -373,7 +384,9 @@ traffic_management() {
 
         echo "调试: 正在获取流量信息..."
         if systemctl is-active --quiet hysteria-server.service; then
+            echo "调试: hysteria-server.service 已启用"
             read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic 2>/dev/null)
+            echo "调试: 读取流量信息: up_gb=${up_gb}, down_gb=${down_gb}"
             
             if [ $? -ne 0 ]; then
                 echo -e "${RED}获取流量信息失败！${PLAIN}"
@@ -505,7 +518,6 @@ traffic_management() {
         echo
     done
 }
-
 
 
 # 卸载 Hysteria 2
