@@ -91,14 +91,13 @@ install_hysteria() {
         return 1
     fi
 
-    # 生成自签名证书
-    print_info "生成自签名证书..."
-    openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
-        -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-        -subj "/CN=bing.com" -days 36500
-    chown hysteria:hysteria /etc/hysteria/server.key
-    chown hysteria:hysteria /etc/hysteria/server.crt
-
+   # 生成自签证书
+print_with_delay "生成自签名证书..." 0.03
+openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
+    -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
+    -subj "/CN=bing.com" -days 36500 && \
+    sudo chown hysteria /etc/hysteria/server.key && \
+    sudo chown hysteria /etc/hysteria/server.crt
     # 生成随机密码
     AUTH_PASSWORD=$(openssl rand -base64 16)
 
@@ -151,8 +150,8 @@ install_hysteria() {
 
 # 创建服务端配置
 create_server_config() {
-    cat > /etc/hysteria/config.yaml << EOF
-listen: :${PORT}
+  cat << EOF > /etc/hysteria/config.yaml
+listen: ":$PORT"
 
 tls:
   cert: /etc/hysteria/server.crt
@@ -160,8 +159,8 @@ tls:
 
 auth:
   type: password
-  password: ${AUTH_PASSWORD}
-
+  password: $AUTH_PASSWORD
+  
 masquerade:
   type: proxy
   proxy:
@@ -173,7 +172,7 @@ EOF
 # 创建客户端配置
 create_client_config() {
     mkdir -p /root/hy2
-    cat > /root/hy2/config.yaml << EOF
+    cat << EOF > /root/hy2/config.yaml
 port: 7890
 allow-lan: true
 mode: rule
@@ -204,14 +203,14 @@ dns:
       - 240.0.0.0/4
 
 proxies:        
-  - name: Hy2-${PUBLIC_IP}
-    server: ${PUBLIC_IP}
-    port: ${PORT}
+  - name: Hy2-Hysteria2
+    server: $PUBLIC_IP
+    port: $PORT
     type: hysteria2
     up: "45 Mbps"
     down: "150 Mbps"
     sni: bing.com
-    password: ${AUTH_PASSWORD}
+    password: $AUTH_PASSWORD
     skip-cert-verify: true
     alpn:
       - h3
@@ -221,13 +220,13 @@ proxy-groups:
     type: select
     proxies:
       - 自动选择
-      - Hy2-${PUBLIC_IP}
+      - Hy2-Hysteria2
       - DIRECT
 
   - name: 自动选择
     type: url-test
     proxies:
-      - Hy2-${PUBLIC_IP}
+      - Hy2-Hysteria2
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     tolerance: 50
