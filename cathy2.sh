@@ -18,6 +18,42 @@ SYSTEM_NAME=$(grep -i pretty_name /etc/os-release | cut -d \" -f2)
 CORE_ARCH=$(arch)
 
 # 横幅
+show_banner() {
+    clear
+    cat << "EOF"
+                       |\__/,|   (\\
+                     _.|o o  |_   ) )
+       -------------(((---(((-------------------
+                    catmi.Hysteria 2 
+EOF
+    echo -e "${GREEN}系统: ${PLAIN}${SYSTEM_NAME}"
+    echo -e "${GREEN}架构: ${PLAIN}${CORE_ARCH}"
+    echo -e "${GREEN}版本: ${PLAIN}1.0.0"
+    echo -e "----------------------------------------"
+}
+
+# 彩色消息
+print_info() {
+    echo -e "${GREEN}[信息]${PLAIN} $1"
+}
+
+print_error() {
+    echo -e "${RED}[错误]${PLAIN} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[警告]${PLAIN} $1"
+}
+# 创建快捷方式
+create_shortcut() {
+    cat > /usr/local/bin/catmihy2 << 'EOF'
+#!/bin/bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
+EOF
+    chmod +x /usr/local/bin/catmihy2
+    print_info "快捷方式 'catmihy2' 创建。使用 'catmihy2' 直接运行此脚本。"
+}
+
 install_hysteria() {
     print_info "安装 Hysteria 2..."
 
