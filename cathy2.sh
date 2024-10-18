@@ -265,12 +265,18 @@ fi
 
 # 获取当前流量
 get_traffic() {
+    echo "调试1"  # 调试信息
     local current_stats=$(vnstat --json | jq '.interfaces[].traffic')
+    echo "调试2: current_stats = $current_stats"  # 调试信息
     local upload=$(echo "$current_stats" | jq -r '.tx' | numfmt --from=iec --invalid=ignore)
+    echo "调试3: upload = $upload"  # 调试信息
     local download=$(echo "$current_stats" | jq -r '.rx' | numfmt --from=iec --invalid=ignore)
+    echo "调试4: download = $download"  # 调试信息
     
     upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc)
+    echo "调试5: upload_gb = $upload_gb"  # 调试信息
     download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc)
+    echo "调试6: download_gb = $download_gb"  # 调试信息
     
     echo "$upload_gb $download_gb"
 }
@@ -390,8 +396,18 @@ traffic_management() {
         hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
         
         # 获取流量信息
-        read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
-        total_gb=$(echo "$up_gb + $down_gb" | bc)
+        if systemctl is-active --quiet hysteria-server.service; then
+            echo "调试1"  # 调试信息
+            read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
+            echo "调试2: up_gb = $up_gb, down_gb = $down_gb"  # 调试信息
+            total_gb=$(echo "$up_gb + $down_gb" | bc)
+        else
+            up_gb="0"
+            down_gb="0"
+            total_gb="0"
+        fi
+        echo "调试3"  # 调试信息
+
         limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
         remaining_gb=$(echo "$limit - $total_gb" | bc)
         
@@ -494,16 +510,17 @@ traffic_management() {
 
 # 主菜单
 show_menu() {
-    echo "调试1"  # 调试信息
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
     hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
-    echo "调试2"  # 调试信息
+    
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
+        echo "调试1"  # 调试信息
         read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
+        echo "调试2: up_gb = $up_gb, down_gb = $down_gb"  # 调试信息
         total_gb=$(echo "$up_gb + $down_gb" | bc)
     else
         up_gb="0"
@@ -511,12 +528,12 @@ show_menu() {
         total_gb="0"
     fi
     echo "调试3"  # 调试信息
+
     limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
     remaining_gb=$(echo "$limit - $total_gb" | bc)
 
     # 显示菜单
     echo -e "
-    echo "调试4"  # 调试信息
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
