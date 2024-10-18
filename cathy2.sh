@@ -542,10 +542,12 @@ modify_port() {
 show_menu() {
      echo "正在显示菜单..."
     # 获取服务状态
+     echo "调试1"  # 调试信息
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
-
+   echo "调试2"  # 调试信息
     # 使用正确的 if 语句结构
+     echo "调试3"  # 调试信息
     if [ "${hysteria_server_status}" == "active" ]; then
         hysteria_server_status_text="${GREEN}已启用${PLAIN}"
     else
@@ -557,7 +559,7 @@ show_menu() {
     else
         hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
     fi
-    
+     echo "调试4"  # 调试信息
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
         read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
@@ -572,6 +574,7 @@ show_menu() {
     remaining_gb=$(echo "$limit - $total_gb" | bc)
     
     echo -e "
+     echo "调试5"  # 调试信息
   ${GREEN}Hysteria 2 管理${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
