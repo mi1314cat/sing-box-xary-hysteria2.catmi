@@ -76,8 +76,10 @@ install_hysteria() {
     print_info "密码: ${AUTH_PASSWORD}"
     print_info "客户端配置保存至: /root/hy2/config.yaml"
 
+    print_info "返回主菜单..."
     show_menu  # 确保返回主菜单
 }
+
 
 
 # 创建服务器配置
@@ -478,13 +480,25 @@ modify_port() {
     systemctl restart hysteria-server.service
 }
 
+
 # 显示菜单
 show_menu() {
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
-    hysteria_server_status_text=$(if [ "${hysteria_server_status}" == "active" ]; then echo -e "${GREEN}已启用${PLAIN}"; else echo -e "${RED}已禁用${PLAIN}"; fi)
-    hy2_traffic_monitor_status_text=$(if [ "${hy2_traffic_monitor_status}" == "active" ]; then echo -e "${GREEN}已启用${PLAIN}"; else echo -e "${RED}已禁用${PLAIN}"; fi)
+
+    # 使用正确的 if 语句结构
+    if [ "${hysteria_server_status}" == "active" ]; then
+        hysteria_server_status_text="${GREEN}已启用${PLAIN}"
+    else
+        hysteria_server_status_text="${RED}已禁用${PLAIN}"
+    fi
+
+    if [ "${hy2_traffic_monitor_status}" == "active" ]; then
+        hy2_traffic_monitor_status_text="${GREEN}已启用${PLAIN}"
+    else
+        hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
+    fi
     
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
@@ -495,7 +509,8 @@ show_menu() {
         down_gb="0"
         total_gb="0"
     fi
-    limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
+
+    limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
     remaining_gb=$(echo "$limit - $total_gb" | bc)
     
     echo -e "
@@ -546,5 +561,7 @@ main() {
         show_menu
     done
 }
+
+
 
 main "$@"
