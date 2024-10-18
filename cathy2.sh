@@ -68,176 +68,8 @@ EOF
 # 安装 Hysteria 2
 install_hysteria() {
     print_info "开始安装 Hysteria 2..."
-
-    # 安装依赖
-    if ! command -v jq &> /dev/null; then
-        print_info "安装 jq..."
-        apt-get update
-        apt-get install -y jq
-    fi
-
-    if ! command -v vnstat &> /dev/null; then
-        print_info "安装 vnstat..."
-        apt-get update
-        apt-get install -y vnstat
-        systemctl start vnstat
-        systemctl enable vnstat
-        vnstat -u -i eth0  # 初始化 vnstat 数据库
-    fi
-
-    # 下载并安装 Hysteria 2
-    if ! bash <(curl -fsSL https://get.hy2.sh/); then
-        print_error "Hysteria 2 安装失败"
-        return 1
-    fi
- 
-    # 生成自签证书
-    
-    openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
-    -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-    -subj "/CN=bing.com" -days 36500 && \
-    sudo chown hysteria /etc/hysteria/server.key && \
-    sudo chown hysteria /etc/hysteria/server.crt
-
-    # 生成随机密码
-    AUTH_PASSWORD=$(openssl rand -base64 16)
-
-    # 提示输入监听端口号
-    PORT=$(generate_port "Hysteria")
-
-    # 获取公网 IP 地址
-    PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
-    PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
-    echo "公网 IPv4 地址: $PUBLIC_IP_V4"
-    echo "公网 IPv6 地址: $PUBLIC_IP_V6"
-
-    # 选择使用哪个公网 IP 地址
-    echo "请选择要使用的公网 IP 地址:"
-    echo "1. $PUBLIC_IP_V4 (默认)"
-    echo "2. $PUBLIC_IP_V6"
-    echo "3. 自定义 IP"
-    read -p "请输入对应的数字选择: " IP_CHOICE
-
-    case "$IP_CHOICE" in
-        1)
-            PUBLIC_IP=$PUBLIC_IP_V4
-            ;;
-        2)
-            PUBLIC_IP=$PUBLIC_IP_V6
-            ;;
-        3)
-            read -p "请输入自定义的公网 IP 地址: " PUBLIC_IP
-            ;;
-        *)
-            PUBLIC_IP=$PUBLIC_IP_V4
-            ;;
-    esac
-
-    # 创建服务端配置
-    create_server_config
-
-    # 创建客户端配置
-    create_client_config
-
-    # 启动服务
-    systemctl enable --now hysteria-server.service
-
-    print_info "Hysteria 2 安装完成！"
-    print_info "服务器地址：${PUBLIC_IP}"
-    print_info "端口：${PORT}"
-    print_info "密码：${AUTH_PASSWORD}"
-    print_info "配置文件已保存到：/root/hy2/config.yaml"
-}
-
-# 创建服务端配置
-create_server_config() {
-   cat << EOF > /etc/hysteria/config.yaml
-listen: ":$PORT"
-
-tls:
-  cert: /etc/hysteria/server.crt
-  key: /etc/hysteria/server.key
-
-auth:
-  type: password
-  password: $AUTH_PASSWORD
-  
-masquerade:
-  type: proxy
-  proxy:
-    url: https://bing.com
-    rewriteHost: true
-EOF
-
-}
-
-# 创建客户端配置
-create_client_config() {
-    mkdir -p /root/hy2
-    cat << EOF > /root/hy2/config.yaml
-port: 7890
-allow-lan: true
-mode: rule
-log-level: info
-unified-delay: true
-global-client-fingerprint: chrome
-ipv6: true
-
-dns:
-  enable: true
-  listen: :53
-  ipv6: true
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
-  default-nameserver: 
-    - 223.5.5.5
-    - 8.8.8.8
-  nameserver:
-    - https://dns.alidns.com/dns-query
-    - https://doh.pub/dns-query
-  fallback:
-    - https://1.0.0.1/dns-query
-    - tls://dns.google
-  fallback-filter:
-    geoip: true
-    geoip-code: CN
-    ipcidr:
-      - 240.0.0.0/4
-
-proxies:        
-  - name: Hy2-Hysteria2
-    server: $PUBLIC_IP
-    port: $PORT
-    type: hysteria2
-    up: "45 Mbps"
-    down: "150 Mbps"
-    sni: bing.com
-    password: $AUTH_PASSWORD
-    skip-cert-verify: true
-    alpn:
-      - h3
-
-proxy-groups:
-  - name: 节点选择
-    type: select
-    proxies:
-      - 自动选择
-      - Hy2-Hysteria2
-      - DIRECT
-
-  - name: 自动选择
-    type: url-test
-    proxies:
-      - Hy2-Hysteria2
-    url: "http://www.gstatic.com/generate_204"
-    interval: 300
-    tolerance: 50
-
-rules:
-  - GEOIP,LAN,DIRECT
-  - GEOIP,CN,DIRECT
-  - MATCH,节点选择
-EOF
+  bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh)
+   
 }
 
 # 卸载 Hysteria 2
@@ -325,14 +157,20 @@ modify_config() {
     echo "密码：${new_password}"
 
     # 重启服务
-    systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
+    if systemctl restart hysteria-server.service; then
+        echo "服务已重启"
+    else
+        echo "重启服务失败"
+    fi
 }
 
-# 确保生成端口函数存在
-generate_port() {
-    # 这里是一个简单的端口生成函数，你可以根据需要修改
-    echo $((RANDOM % 65535 + 1))
+
 }
+
+    # 重启服务
+    systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
+
+
 
 
 # 主菜单
