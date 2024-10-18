@@ -67,11 +67,12 @@ generate_port() {
 create_shortcut() {
     cat > /usr/local/bin/catmihy2 << 'EOF'
 #!/bin/bash
-source /path/to/your/script.sh
+source /root/cathy2.sh
 EOF
     chmod +x /usr/local/bin/catmihy2
-    print_info "快捷方式 'catmihy2' 已创建，现在可以直接使用 'catmihy2' 命令运行脚本"
+    echo "快捷方式 'catmihy2' 已创建，现在可以直接使用 'catmihy2' 命令运行脚本"
 }
+
 
 
 # 安装基础依赖
