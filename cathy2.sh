@@ -138,12 +138,42 @@ install_hysteria() {
     # 选择IP类型
     read -p "使用自动检测的IP ${IP}? (y/n, 默认: y): " ip_response
     if [ "${ip_response,,}" != "y" ]; then
-        read -p "输入自定义IP: " custom_ip
-        if [ -z "$custom_ip" ]; then
-            print_error "无效的IP地址。"
-            exit 1
-        fi
-        IP=$custom_ip
+        echo -e "1. IPv4"
+        echo -e "2. IPv6"
+        echo -e "3. 自定义IP"
+        while true; do
+            read -p "选择IP类型 [1-3]: " ip_type
+            case "${ip_type}" in
+                1)
+                    IP=$(curl -s4m8 ip.gs)
+                    if [ -z "$IP" ]; then
+                        print_error "未能获取IPv4地址。"
+                        exit 1
+                    fi
+                    break
+                    ;;
+                2)
+                    IP=$(curl -s6m8 ip.gs)
+                    if [ -z "$IP" ]; then
+                        print_error "未能获取IPv6地址。"
+                        exit 1
+                    fi
+                    break
+                    ;;
+                3)
+                    read -p "输入自定义IP: " custom_ip
+                    if [ -z "$custom_ip" ]; then
+                        print_error "无效的IP地址。"
+                        exit 1
+                    fi
+                    IP=$custom_ip
+                    break
+                    ;;
+                *)
+                    print_error "无效的选择。请重试。"
+                    ;;
+            esac
+        done
     fi
     
     # 创建服务器配置
