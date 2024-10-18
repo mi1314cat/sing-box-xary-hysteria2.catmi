@@ -376,6 +376,7 @@ show_menu() {
 main() {
     show_banner
     create_shortcut
+    generate_port
     while true; do
         show_menu
     done
