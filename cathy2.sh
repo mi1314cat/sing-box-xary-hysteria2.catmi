@@ -209,7 +209,7 @@ proxies:
     port: ${PORT}
     type: hysteria2
     up: "45 Mbps"
-    down: "120 Mbps"
+    down: "150 Mbps"
     sni: bing.com
     password: ${AUTH_PASSWORD}
     skip-cert-verify: true
@@ -394,11 +394,21 @@ traffic_management() {
     while true; do
         # 获取服务状态
         hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
+        hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
+        
+        # 获取流量信息
+        read up_gb down_gb <<< $(get_traffic)
+        total_gb=$(echo "$up_gb + $down_gb" | bc)
+        limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
+        remaining_gb=$(echo "$limit - $total_gb" | bc)
         
         echo -e "
   ${GREEN}流量管理${PLAIN}
- ----------------------
-  流量管理服务状态: ${hy2_traffic_monitor_status}
+  ----------------------
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已使用的流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
   ----------------------
   ${GREEN}1.${PLAIN} 设置流量限制
   ${GREEN}2.${PLAIN} 查看当前流量
@@ -406,7 +416,7 @@ traffic_management() {
   ${GREEN}4.${PLAIN} 重置流量统计
   ${GREEN}5.${PLAIN} 开启/关闭流量管理
   ${GREEN}6.${PLAIN} 设置流量重置方式
-
+  
   ----------------------"
         
         read -p "请输入选项 [0-6]: " choice
@@ -423,9 +433,6 @@ traffic_management() {
                 fi
                 ;;
             2)
-                read up_gb down_gb <<< $(get_traffic)
-                total_gb=$(echo "$up_gb + $down_gb" | bc)
-                limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
                 echo -e "
 当前流量统计:
 ------------------------
@@ -542,12 +549,23 @@ show_menu() {
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
+    hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
+    hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
+    
+    # 获取流量信息
+    read up_gb down_gb <<< $(get_traffic)
+    total_gb=$(echo "$up_gb + $down_gb" | bc)
+    limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
+    remaining_gb=$(echo "$limit - $total_gb" | bc)
     
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
-  Hysteria 2 服务状态: ${hysteria_server_status}
-  流量管理服务状态: ${hy2_traffic_monitor_status}
+  Hysteria 2 服务状态: ${hysteria_server_status_text}
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已使用的流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
   ${GREEN}2.${PLAIN} 卸载 Hysteria 2
@@ -556,7 +574,7 @@ show_menu() {
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
-   ----------------------
+  ----------------------
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------"
     read -p "请输入选项 [0-7]: " choice
