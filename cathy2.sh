@@ -165,7 +165,7 @@ modify_config() {
 }
 
 
-}
+
 
     # 重启服务
     systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
