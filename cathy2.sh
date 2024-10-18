@@ -19,9 +19,9 @@ show_banner() {
     clear
     cat << "EOF"
                        |\__/,|   (\\
-                     _.|o o  |_   ) )
-       -------------(((---(((-------------------
-                    catmi.Hysteria 2 
+                     _.|o o  (\\
+       -----------------------------------------
+       |  catmihy2 - Hysteria 2 管理脚本       |
        -----------------------------------------
 EOF
     echo -e "${GREEN}System: ${PLAIN}${SYSTEM_NAME}"
@@ -451,7 +451,7 @@ traffic_management() {
                 echo -e "
 当前流量统计:
 ------------------------
-上传流量: ${GREEN}${up_gb}GB${PLAIN}
+上传流量: ${ GREEN}${up_gb}GB${PLAIN}
 下载流量: ${GREEN}${down_gb}GB${PLAIN}
 总流量: ${GREEN}${total_gb}GB${PLAIN}
 流量限制: ${YELLOW}${limit}GB${PLAIN}
