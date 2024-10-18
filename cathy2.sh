@@ -65,12 +65,12 @@ generate_port() {
 
 # 创建快捷方式
 create_shortcut() {
-    cat > /usr/local/bin/catmi << 'EOF'
+    cat > /usr/local/bin/catmihy2 << 'EOF'
 #!/bin/bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/你的GitHub用户名/hysteria2-script/main/install.sh)
 EOF
-    chmod +x /usr/local/bin/catmi
-    print_info "快捷方式 'catmi' 已创建，现在可以直接使用 'catmi' 命令运行脚本"
+    chmod +x /usr/local/bin/catmihy2
+    print_info "快捷方式 'catmihy2' 已创建，现在可以直接使用 'catmihy2' 命令运行脚本"
 }
 
 # 安装基础依赖
@@ -208,8 +208,8 @@ proxies:
     server: ${IP}
     port: ${PORT}
     type: hysteria2
-    up: "100 Mbps"
-    down: "100 Mbps"
+    up: "45 Mbps"
+    down: "150 Mbps"
     sni: bing.com
     password: ${AUTH_PASSWORD}
     skip-cert-verify: true
@@ -398,7 +398,7 @@ traffic_management() {
         
         # 获取流量信息
         if systemctl is-active --quiet hysteria-server.service; then
-            read up_gb down_gb <<< $(get_traffic)
+            read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
             total_gb=$(echo "$up_gb + $down_gb" | bc)
         else
             up_gb="0"
@@ -411,6 +411,11 @@ traffic_management() {
         echo -e "
   ${GREEN}流量管理${PLAIN}
   ----------------------
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已使用的流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
+  ----------------------
   ${GREEN}1.${PLAIN} 设置流量限制
   ${GREEN}2.${PLAIN} 查看当前流量
   ${GREEN}3.${PLAIN} 查看流量日志
@@ -418,11 +423,7 @@ traffic_management() {
   ${GREEN}5.${PLAIN} 开启/关闭流量管理
   ${GREEN}6.${PLAIN} 设置流量重置方式
   ${GREEN}0.${PLAIN} 返回主菜单
-  ----------------------
-  流量管理服务状态: ${hy2_traffic_monitor_status_text}
-  流量限制: ${limit}GB
-  已使用的流量: ${total_gb}GB
-  剩余流量: ${remaining_gb}GB
+  
   ----------------------"
         
         read -p "请输入选项 [0-6]: " choice
@@ -478,9 +479,10 @@ traffic_management() {
   ----------------------
   ${GREEN}1.${PLAIN} 每月的第一天重置
   ${GREEN}2.${PLAIN} 每30天重置
+  ${GREEN}3.${PLAIN} 不循环重置
   ${GREEN}0.${PLAIN} 返回上一级
   ----------------------"
-                read -p "请输入选项 [0-2]: " reset_choice
+                read -p "请输入选项 [0-3]: " reset_choice
                 case "${reset_choice}" in
                     0) break ;;
                     1)
@@ -490,6 +492,10 @@ traffic_management() {
                     2)
                         echo "TRAFFIC_RESET_MODE=30days" > /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置方式已设置为每30天重置${PLAIN}"
+                        ;;
+                    3)
+                        echo "TRAFFIC_RESET_MODE=manual" > /etc/hysteria/traffic_config
+                        echo -e "${GREEN}流量重置方式已设置为不循环重置${PLAIN}"
                         ;;
                     *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
                 esac
@@ -509,7 +515,7 @@ uninstall_hysteria() {
     systemctl disable hy2-traffic-monitor.service
     rm -rf /etc/hysteria
     rm -rf /root/hy2
-    rm -f /usr/local/bin/catmi
+    rm -f /usr/local/bin/catmihy2
     rm -f /usr/local/bin/hy2_traffic_monitor.sh
     rm -f /etc/systemd/system/hy2-traffic-monitor.service
     systemctl daemon-reload
@@ -560,7 +566,7 @@ show_menu() {
     
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
-        read up_gb down_gb <<< $(get_traffic)
+        read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
         total_gb=$(echo "$up_gb + $down_gb" | bc)
     else
         up_gb="0"
@@ -573,6 +579,12 @@ show_menu() {
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
+  Hysteria 2 服务状态: ${hysteria_server_status_text}
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已使用的流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
+  ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
   ${GREEN}2.${PLAIN} 卸载 Hysteria 2
   ${GREEN}3.${PLAIN} 更新 Hysteria 2
@@ -580,12 +592,7 @@ show_menu() {
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
-  ----------------------
-  Hysteria 2 服务状态: ${hysteria_server_status_text}
-  流量管理服务状态: ${hy2_traffic_monitor_status_text}
-  流量限制: ${limit}GB
-  已使用的流量: ${total_gb}GB
-  剩余流量: ${remaining_gb}GB
+  
   ----------------------
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------"
