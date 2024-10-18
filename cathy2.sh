@@ -279,9 +279,11 @@ modify_config() {
     read -p "请输入新的密码 (默认随机生成): " new_password
     new_password=${new_password:-$(openssl rand -base64 16)}
 
+    # 修改服务端配置
     sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
     sed -i "s/^password: .*/password: ${new_password}/" /etc/hysteria/config.yaml
 
+    # 修改客户端配置
     sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
     sed -i "s/^password: .*/password: ${new_password}/" /root/hy2/config.yaml
 
