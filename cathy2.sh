@@ -69,16 +69,36 @@ EOF
 install_hysteria() {
     print_info "开始安装 Hysteria 2..."
 
-    bash <(curl -fsSL https://get.hy2.sh/)
-}
+    # 安装依赖
+    if ! command -v jq &> /dev/null; then
+        print_info "安装 jq..."
+        apt-get update
+        apt-get install -y jq
+    fi
 
-   # 生成自签证书
-print_with_delay "生成自签名证书..." 0.03
-openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
-    -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-    -subj "/CN=bing.com" -days 36500 && \
-    sudo chown hysteria /etc/hysteria/server.key && \
-    sudo chown hysteria /etc/hysteria/server.crt
+    if ! command -v vnstat &> /dev/null; then
+        print_info "安装 vnstat..."
+        apt-get update
+        apt-get install -y vnstat
+        systemctl start vnstat
+        systemctl enable vnstat
+        vnstat -u -i eth0  # 初始化 vnstat 数据库
+    fi
+
+    # 下载并安装 Hysteria 2
+    if ! bash <(curl -fsSL https://get.hy2.sh/); then
+        print_error "Hysteria 2 安装失败"
+        return 1
+    fi
+
+    # 生成自签名证书
+    print_info "生成自签名证书..."
+    openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
+        -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
+        -subj "/CN=bing.com" -days 36500
+    chown hysteria:hysteria /etc/hysteria/server.key
+    chown hysteria:hysteria /etc/hysteria/server.crt
+
     # 生成随机密码
     AUTH_PASSWORD=$(openssl rand -base64 16)
 
@@ -131,8 +151,8 @@ openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
 
 # 创建服务端配置
 create_server_config() {
-  cat << EOF > /etc/hysteria/config.yaml
-listen: ":$PORT"
+    cat > /etc/hysteria/config.yaml << EOF
+listen: :${PORT}
 
 tls:
   cert: /etc/hysteria/server.crt
@@ -140,8 +160,8 @@ tls:
 
 auth:
   type: password
-  password: $AUTH_PASSWORD
-  
+  password: ${AUTH_PASSWORD}
+
 masquerade:
   type: proxy
   proxy:
@@ -153,7 +173,7 @@ EOF
 # 创建客户端配置
 create_client_config() {
     mkdir -p /root/hy2
-    cat << EOF > /root/hy2/config.yaml
+    cat > /root/hy2/config.yaml << EOF
 port: 7890
 allow-lan: true
 mode: rule
@@ -184,14 +204,14 @@ dns:
       - 240.0.0.0/4
 
 proxies:        
-  - name: Hy2-Hysteria2
-    server: $PUBLIC_IP
-    port: $PORT
+  - name: Hy2-${PUBLIC_IP}
+    server: ${PUBLIC_IP}
+    port: ${PORT}
     type: hysteria2
     up: "45 Mbps"
     down: "150 Mbps"
     sni: bing.com
-    password: $AUTH_PASSWORD
+    password: ${AUTH_PASSWORD}
     skip-cert-verify: true
     alpn:
       - h3
@@ -201,13 +221,13 @@ proxy-groups:
     type: select
     proxies:
       - 自动选择
-      - Hy2-Hysteria2
+      - Hy2-${PUBLIC_IP}
       - DIRECT
 
   - name: 自动选择
     type: url-test
     proxies:
-      - Hy2-Hysteria2
+      - Hy2-${PUBLIC_IP}
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     tolerance: 50
@@ -273,13 +293,11 @@ modify_config() {
 
 # 主菜单
 show_menu() {
-    clear
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     
-    
-   
+    # 显示菜单
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
