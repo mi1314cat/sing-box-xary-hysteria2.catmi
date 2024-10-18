@@ -494,12 +494,13 @@ traffic_management() {
 
 # 主菜单
 show_menu() {
+    echo "调试1"  # 调试信息
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
     hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
-    
+    echo "调试2"  # 调试信息
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
         read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
@@ -509,12 +510,13 @@ show_menu() {
         down_gb="0"
         total_gb="0"
     fi
-    
+    echo "调试3"  # 调试信息
     limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
     remaining_gb=$(echo "$limit - $total_gb" | bc)
 
     # 显示菜单
     echo -e "
+    echo "调试4"  # 调试信息
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
