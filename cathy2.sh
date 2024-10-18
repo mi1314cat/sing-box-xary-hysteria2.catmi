@@ -9,16 +9,7 @@ PLAIN="\033[0m"
 
 # 检查是否为root用户
 [[ $EUID -ne 0 ]] && echo -e "${RED}错误：${PLAIN} 必须使用root用户运行此脚本！\n" && exit 1
-# 打印带延迟的消息
-print_with_delay() {
-    local message="$1"
-    local delay="$2"
-    for (( i=0; i<${#message}; i++ )); do
-        printf "%s" "${message:$i:1}"
-        sleep "$delay"
-    done
-    echo ""
-}
+
 # 系统信息
 SYSTEM_NAME=$(grep -i pretty_name /etc/os-release | cut -d \" -f2)
 CORE_ARCH=$(arch)
@@ -306,9 +297,10 @@ show_menu() {
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     
-    # 显示菜单
-    print_with_delay "**************Hysteria 2.catmi*************" 0.03
+    
+   
     echo -e "
+  **************Hysteria 2.catmi*************
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
