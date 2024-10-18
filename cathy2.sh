@@ -82,6 +82,7 @@ install_hysteria() {
         apt-get install -y vnstat
         systemctl start vnstat
         systemctl enable vnstat
+        vnstat -u -i eth0  # 初始化 vnstat 数据库
     fi
 
     # 下载并安装 Hysteria 2
@@ -265,8 +266,8 @@ fi
 # 获取当前流量
 get_traffic() {
     local current_stats=$(vnstat --json | jq '.interfaces[].traffic')
-    local upload=$(echo "$current_stats" | jq '.tx' | numfmt --from=iec)
-    local download=$(echo "$current_stats" | jq '.rx' | numfmt --from=iec)
+    local upload=$(echo "$current_stats" | jq -r '.tx' | numfmt --from=iec --invalid=0)
+    local download=$(echo "$current_stats" | jq -r '.rx' | numfmt --from=iec --invalid=0)
     
     upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc)
     download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc)
@@ -478,17 +479,17 @@ traffic_management() {
                         echo -e "${GREEN}流量重置方式已设置为每30天重置${PLAIN}"
                         ;;
                     3)
-                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFic_reset_mode=manual/" /etc/hysteria/traffic_config
-  Echo -e "${GREEN}流量重置方式已设置为不循环重置${PLAIN}"
-  ;;
-  *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
-esac
-;;
-*) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
-esac
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=manual/" /etc/hysteria/traffic_config
+                        echo -e "${GREEN}流量重置方式已设置为不循环重置${PLAIN}"
+                        ;;
+                    *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
+                esac
+                ;;
+            *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
+        esac
 
-echo && read -p "按回车键继续..." && echo
-done
+        echo && read -p "按回车键继续..." && echo
+    done
 }
 
 # 主菜单
