@@ -152,14 +152,14 @@ modify_config() {
     echo "密码：${new_password}"
 
     # 重启服务
-    systemctl restart hysteria-server.service && echo "服务已重启" || echo "重启服务失败"
+    if systemctl restart hysteria-server.service; then
+        echo "服务已重启"
+    else
+        echo "重启服务失败"
+    fi
 }
 
-# 确保生成端口函数存在
-generate_port() {
-    # 这里是一个简单的端口生成函数，你可以根据需要修改
-    echo $((RANDOM % 65535 + 1))
-}
+
 
 
 # 主菜单
