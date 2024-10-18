@@ -101,10 +101,14 @@ view_client_config() {
 
 # 修改配置
 modify_config() {
-    read -p "请输入新的端口号 (默认随机生成): " new_port
+    # 获取当前的端口和密码
+    current_port=$(grep -oP '(?<=listen: ")[0-9]+' /etc/hysteria/config.yaml)
+    current_password=$(grep -oP '(?<=password: ).*' /etc/hysteria/config.yaml)
+
+    read -p "请输入新的端口号 (当前: ${current_port}, 默认随机生成): " new_port
     new_port=${new_port:-$(generate_port "Hysteria")}
 
-    read -p "请输入新的密码 (默认随机生成): " new_password
+    read -p "请输入新的密码 (当前: ${current_password}, 默认随机生成): " new_password
     new_password=${new_password:-$(openssl rand -base64 16)}
 
     # 输出修改前的配置
@@ -158,6 +162,7 @@ modify_config() {
         echo "重启服务失败"
     fi
 }
+
 
 
 # 主菜单
