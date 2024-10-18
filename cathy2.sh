@@ -9,7 +9,16 @@ PLAIN="\033[0m"
 
 # 检查是否为root用户
 [[ $EUID -ne 0 ]] && echo -e "${RED}错误：${PLAIN} 必须使用root用户运行此脚本！\n" && exit 1
-
+# 打印带延迟的消息
+print_with_delay() {
+    local message="$1"
+    local delay="$2"
+    for (( i=0; i<${#message}; i++ )); do
+        printf "%s" "${message:$i:1}"
+        sleep "$delay"
+    done
+    echo ""
+}
 # 系统信息
 SYSTEM_NAME=$(grep -i pretty_name /etc/os-release | cut -d \" -f2)
 CORE_ARCH=$(arch)
