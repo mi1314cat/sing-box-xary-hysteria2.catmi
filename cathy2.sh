@@ -19,7 +19,7 @@ show_banner() {
     clear
     cat << "EOF"
                        |\__/,|   (\\
-                     _.|o o  |_   ) )
+                     _.|o O  |_   ) )
        -------------(((---(((-------------------
                     catmi.Hysteria 2 
        -----------------------------------------
@@ -136,6 +136,9 @@ install_hysteria() {
     
     # 启动服务
     systemctl enable --now hysteria-server.service
+    
+    # 创建流量监控
+    create_traffic_monitor
     
     print_info "Hysteria 2 安装完成！"
     print_info "服务器地址：${IP}"
@@ -425,9 +428,14 @@ uninstall_hysteria() {
     print_info "开始卸载 Hysteria 2..."
     systemctl stop hysteria-server.service
     systemctl disable hysteria-server.service
+    systemctl stop hy2-traffic-monitor.service
+    systemctl disable hy2-traffic-monitor.service
     rm -rf /etc/hysteria
     rm -rf /root/hy2
     rm -f /usr/local/bin/catmi
+    rm -f /usr/local/bin/hy2_traffic_monitor.sh
+    rm -f /etc/systemd/system/hy2-traffic-monitor.service
+    systemctl daemon-reload
     print_info "Hysteria 2 已成功卸载"
 }
 
