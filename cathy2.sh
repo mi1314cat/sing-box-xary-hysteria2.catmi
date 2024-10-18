@@ -358,6 +358,7 @@ EOF
 
 # 流量管理
 # 流量管理
+# 流量管理
 traffic_management() {
     while true; do
         echo "调试: 正在获取流量监控服务状态..."
@@ -396,7 +397,6 @@ traffic_management() {
             limit="0"
         fi
 
-        total_gb=$(echo "$up_gb + $down_gb" | bc)
         remaining_gb=$(echo "$limit - $total_gb" | bc)
         echo "调试: 流量限制: ${limit}GB, 剩余流量: ${remaining_gb}GB"
 
