@@ -69,27 +69,8 @@ EOF
 install_hysteria() {
     print_info "开始安装 Hysteria 2..."
 
-    # 安装依赖
-    if ! command -v jq &> /dev/null; then
-        print_info "安装 jq..."
-        apt-get update
-        apt-get install -y jq
-    fi
-
-    if ! command -v vnstat &> /dev/null; then
-        print_info "安装 vnstat..."
-        apt-get update
-        apt-get install -y vnstat
-        systemctl start vnstat
-        systemctl enable vnstat
-        vnstat -u -i eth0  # 初始化 vnstat 数据库
-    fi
-
-    # 下载并安装 Hysteria 2
-    if ! bash <(curl -fsSL https://get.hy2.sh/); then
-        print_error "Hysteria 2 安装失败"
-        return 1
-    fi
+    bash <(curl -fsSL https://get.hy2.sh/)
+}
 
    # 生成自签证书
 print_with_delay "生成自签名证书..." 0.03
