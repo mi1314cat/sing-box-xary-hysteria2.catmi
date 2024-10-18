@@ -333,9 +333,6 @@ check_traffic() {
     total_gb=$(echo "$up_gb + $down_gb" | bc)
     
     # 记录流量
-    echo "$(date '+%Y-%m-%d %H:%M:%S high-speed data allowance. Once you've used your high-speed data, you'll experience reduced internet speeds. For AT&T Internet 100000000..."
-    
-    # 记录流量
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Upload: ${up_gb}GB, Download: ${down_gb}GB, Total: ${total_gb}GB" >> $LOG_FILE
     
     # 检查是否超过限制
@@ -421,7 +418,7 @@ traffic_management() {
         
         echo -e "
   ${GREEN}流量管理${PLAIN}
-   ----------------------
+  ----------------------
   流量管理服务状态: ${hy2_traffic_monitor_status_text}
   流量限制: ${limit}GB
   已使用的流量: ${total_gb}GB
@@ -434,7 +431,7 @@ traffic_management() {
   ${GREEN}5.${PLAIN} 开启/关闭流量管理
   ${GREEN}6.${PLAIN} 设置流量重置方式
   ${GREEN}0.${PLAIN} 返回主菜单
- 
+  
   ----------------------"
         
         read -p "请输入选项 [0-6]: " choice
@@ -589,7 +586,7 @@ show_menu() {
     
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
-    ----------------------
+  ----------------------
   Hysteria 2 服务状态: ${hysteria_server_status_text}
   流量管理服务状态: ${hy2_traffic_monitor_status_text}
   流量限制: ${limit}GB
@@ -603,7 +600,7 @@ show_menu() {
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
-
+  
   ----------------------
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------"
