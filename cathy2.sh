@@ -166,9 +166,7 @@ masquerade:
     url: https://bing.com
     rewriteHost: true
 
-bandwidth:
-  up: 1 gbps
-  down: 1 gbps
+
 EOF
 }
 
@@ -210,8 +208,8 @@ proxies:
     server: ${IP}
     port: ${PORT}
     type: hysteria2
-    up: "100 Mbps"
-    down: "100 Mbps"
+    up: "45 Mbps"
+    down: "120 Mbps"
     sni: bing.com
     password: ${AUTH_PASSWORD}
     skip-cert-verify: true
@@ -394,8 +392,13 @@ EOF
 # 在主脚本中添加流量管理函数
 traffic_management() {
     while true; do
+        # 获取服务状态
+        hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
+        
         echo -e "
   ${GREEN}流量管理${PLAIN}
+ ----------------------
+  流量管理服务状态: ${hy2_traffic_monitor_status}
   ----------------------
   ${GREEN}1.${PLAIN} 设置流量限制
   ${GREEN}2.${PLAIN} 查看当前流量
@@ -403,7 +406,7 @@ traffic_management() {
   ${GREEN}4.${PLAIN} 重置流量统计
   ${GREEN}5.${PLAIN} 开启/关闭流量管理
   ${GREEN}6.${PLAIN} 设置流量重置方式
-  ${GREEN}0.${PLAIN} 返回主菜单
+
   ----------------------"
         
         read -p "请输入选项 [0-6]: " choice
@@ -536,8 +539,15 @@ modify_port() {
 
 # 更新后的显示主菜单函数
 show_menu() {
+    # 获取服务状态
+    hysteria_server_status=$(systemctl is-active hysteria-server.service)
+    hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
+    
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
+  ----------------------
+  Hysteria 2 服务状态: ${hysteria_server_status}
+  流量管理服务状态: ${hy2_traffic_monitor_status}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
   ${GREEN}2.${PLAIN} 卸载 Hysteria 2
@@ -546,6 +556,7 @@ show_menu() {
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
+   ----------------------
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------"
     read -p "请输入选项 [0-7]: " choice
