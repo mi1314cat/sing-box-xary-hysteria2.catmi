@@ -359,20 +359,30 @@ traffic_management() {
     while true; do
         # 获取服务状态
         hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
-        hy2_traffic_monitor_status_text=$(if [ "${hy2_traffic_monitor_status}" == "active" ]; then echo -e "${GREEN}已启用${PLAIN}"; else echo -e "${RED}已禁用${PLAIN}"; fi)
-        
+        if [ "${hy2_traffic_monitor_status}" == "active" ]; then
+            hy2_traffic_monitor_status_text="${GREEN}已启用${PLAIN}"
+        else
+            hy2_traffic_monitor_status_text="${RED}已禁用${PLAIN}"
+        fi
+
         # 获取流量信息
         if systemctl is-active --quiet hysteria-server.service; then
-            read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
+            read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic 2>/dev/null)
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}获取流量信息失败！${PLAIN}"
+                up_gb="0"
+                down_gb="0"
+            fi
             total_gb=$(echo "$up_gb + $down_gb" | bc)
         else
             up_gb="0"
             down_gb="0"
             total_gb="0"
         fi
-        limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
+
+        limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
         remaining_gb=$(echo "$limit - $total_gb" | bc)
-        
+
         echo -e "
   ${GREEN}流量管理${PLAIN}
   ----------------------
@@ -389,7 +399,7 @@ traffic_management() {
   已用流量: ${total_gb}GB
   剩余流量: ${remaining_gb}GB
   ----------------------"
-        
+
         read -p "输入选项 [0-6]: " choice
         echo "选择的选项: ${choice}"  # 调试信息
         
@@ -428,7 +438,7 @@ traffic_management() {
                 echo -e "${GREEN}流量统计重置${PLAIN}"
                 ;;
             5)
-                current_status=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_MANAGEMENT_ENABLED | cut -d= -f2)
+                current_status=$(grep TRAFFIC_MANAGEMENT_ENABLED /etc/hysteria/traffic_config | cut -d= -f2)
                 if [ "${current_status}" == "true" ]; then
                     echo "TRAFFIC_MANAGEMENT_ENABLED=false" > /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量管理已禁用${PLAIN}"
