@@ -43,6 +43,7 @@ print_warning() {
     echo -e "${YELLOW}[Warning]${PLAIN} $1"
 }
 
+
 # 生成端口的函数
 generate_port() {
     local protocol="$1"
@@ -50,11 +51,10 @@ generate_port() {
         port=$((RANDOM % 10001 + 10000))
         read -p "请为 ${protocol} 输入监听端口(默认为随机生成): " user_input
         port=${user_input:-$port}
-        ss -tuln | grep -q ":$port\b" || { echo "$port"; return 0; }
+        ss -tuln | grep -q ":$port\b" || { echo "$port"; return $port; }
         echo "端口 $port 被占用，请输入其他端口"
     done
 }
-
 # 创建快捷方式
 create_shortcut() {
     cat > /usr/local/bin/catmihy2 << 'EOF'
