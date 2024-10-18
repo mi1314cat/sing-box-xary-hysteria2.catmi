@@ -65,9 +65,24 @@ EOF
     print_info "快捷方式 'catmihy2' 已创建，可使用 'catmihy2' 命令运行脚本"
 }
 
-# 安装 Hysteria.2
+# 安装 Hysteria 2
 install_hysteria() {
     print_info "开始安装 Hysteria 2..."
+
+    # 安装依赖
+    if ! command -v jq &> /dev/null; then
+        print_info "安装 jq..."
+        apt-get update
+        apt-get install -y jq
+    fi
+
+    if ! command -v vnstat &> /dev/null; then
+        print_info "安装 vnstat..."
+        apt-get update
+        apt-get install -y vnstat
+        systemctl start vnstat
+        systemctl enable vnstat
+    fi
 
     # 下载并安装 Hysteria 2
     if ! bash <(curl -fsSL https://get.hy2.sh/); then
@@ -463,17 +478,17 @@ traffic_management() {
                         echo -e "${GREEN}流量重置方式已设置为每30天重置${PLAIN}"
                         ;;
                     3)
-                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=manual/" /etc/hysteria/traffic_config
-                        echo -e "${GREEN}流量重置方式已设置为不循环重置${PLAIN}"
-                        ;;
-                    *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
-                esac
-                ;;
-            *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
-        esac
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFic_reset_mode=manual/" /etc/hysteria/traffic_config
+  Echo -e "${GREEN}流量重置方式已设置为不循环重置${PLAIN}"
+  ;;
+  *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
+esac
+;;
+*) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
+esac
 
-        echo && read -p "按回车键继续..." && echo
-    done
+echo && read -p "按回车键继续..." && echo
+done
 }
 
 # 主菜单
