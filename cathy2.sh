@@ -540,6 +540,7 @@ modify_port() {
 
 # 显示菜单
 show_menu() {
+     clear
      echo "正在显示菜单..."
     # 获取服务状态
      echo "调试1"  # 调试信息
