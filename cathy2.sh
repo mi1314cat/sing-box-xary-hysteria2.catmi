@@ -266,8 +266,8 @@ fi
 # 获取当前流量
 get_traffic() {
     local current_stats=$(vnstat --json | jq '.interfaces[].traffic')
-    local upload=$(echo "$current_stats" | jq -r '.tx' | numfmt --from=iec --invalid=0)
-    local download=$(echo "$current_stats" | jq -r '.rx' | numfmt --from=iec --invalid=0)
+    local upload=$(echo "$current_stats" | jq -r '.tx' | numfmt --from=iec --invalid=ignore)
+    local download=$(echo "$current_stats" | jq -r '.rx' | numfmt --from=iec --invalid=ignore)
     
     upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc)
     download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc)
