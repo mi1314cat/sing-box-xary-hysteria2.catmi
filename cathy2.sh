@@ -16,7 +16,41 @@ fi
 # 系统信息
 SYSTEM_NAME=$(grep -i pretty_name /etc/os-release | cut -d \" -f2)
 CORE_ARCH=$(arch)
+# 获取流量信息
+get_traffic_info() {
+    echo "调试: 正在获取流量信息..."
+    if systemctl is-active --quiet hysteria-server.service; then
+        echo "调试: hysteria-server.service 已启用"
+        read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic 2>/dev/null)
+        echo "调试: 读取流量信息: up_gb=${up_gb}, down_gb=${down_gb}"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}获取流量信息失败！${PLAIN}"
+            up_gb="0"
+            down_gb="0"
+        fi
+        
+        total_gb=$(echo "$up_gb + $down_gb" | bc)
+        echo "调试: 上行流量: ${up_gb}GB, 下行流量: ${down_gb}GB, 总流量: ${total_gb}GB"
+    else
+        up_gb="0"
+        down_gb="0"
+        total_gb="0"
+        echo "调试: Hysteria 服务器未启用，流量设置为0"
+    fi
 
+    echo "调试: 正在获取流量限制..."
+    limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
+    if [ -z "$limit" ]; then
+        echo -e "${RED}流量限制未找到！${PLAIN}"
+        limit="0"
+    fi
+
+    remaining_gb=$(echo "$limit - $total_gb" | bc)
+    echo "调试: 流量限制: ${limit}GB, 剩余流量: ${remaining_gb}GB"
+
+    echo -e "流量监控信息:\n上行流量: ${up_gb}GB\n下行流量: ${down_gb}GB\n总流量: ${total_gb}GB\n流量限制: ${limit}GB\n剩余流量: ${remaining_gb}GB"
+}
 # 横幅
 show_banner() {
     clear
@@ -260,43 +294,7 @@ else
 fi
 
 
-# 获取当前流量
 
-# 获取流量信息
-get_traffic_info() {
-    echo "调试: 正在获取流量信息..."
-    if systemctl is-active --quiet hysteria-server.service; then
-        echo "调试: hysteria-server.service 已启用"
-        read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic 2>/dev/null)
-        echo "调试: 读取流量信息: up_gb=${up_gb}, down_gb=${down_gb}"
-        
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}获取流量信息失败！${PLAIN}"
-            up_gb="0"
-            down_gb="0"
-        fi
-        
-        total_gb=$(echo "$up_gb + $down_gb" | bc)
-        echo "调试: 上行流量: ${up_gb}GB, 下行流量: ${down_gb}GB, 总流量: ${total_gb}GB"
-    else
-        up_gb="0"
-        down_gb="0"
-        total_gb="0"
-        echo "调试: Hysteria 服务器未启用，流量设置为0"
-    fi
-
-    echo "调试: 正在获取流量限制..."
-    limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
-    if [ -z "$limit" ]; then
-        echo -e "${RED}流量限制未找到！${PLAIN}"
-        limit="0"
-    fi
-
-    remaining_gb=$(echo "$limit - $total_gb" | bc)
-    echo "调试: 流量限制: ${limit}GB, 剩余流量: ${remaining_gb}GB"
-
-    echo -e "流量监控信息:\n上行流量: ${up_gb}GB\n下行流量: ${down_gb}GB\n总流量: ${total_gb}GB\n流量限制: ${limit}GB\n剩余流量: ${remaining_gb}GB"
-}
 # 检查流量并记录
 check_traffic() {
     read up_gb down_gb <<< $(get_traffic)
@@ -366,8 +364,6 @@ EOF
     systemctl enable hy2-traffic-monitor.service
     systemctl stop hy2-traffic-monitor.service  # 默认禁用
 }
-
-
 
 # 流量管理
 traffic_management() {
@@ -487,6 +483,8 @@ traffic_management() {
     done
 }
 
+
+
 # 卸载 Hysteria 2
 uninstall_hysteria() {
     print_info "卸载 Hysteria 2..."
@@ -536,11 +534,9 @@ modify_port() {
     print_info "端口已更新为 ${new_port}"
     systemctl restart hysteria-server.service
 }
-
-
 # 显示菜单
 show_menu() {
-     clear
+    clear
     echo "正在显示菜单..."
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
@@ -562,7 +558,6 @@ show_menu() {
     get_traffic_info
 
     echo -e "
-     echo "调试5"  # 调试信息
   ${GREEN}Hysteria 2 管理${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
@@ -600,8 +595,9 @@ show_menu() {
     echo "按回车键继续..."  # 调试信息
     read -p ""  # 读取回车键
     echo
-     echo "菜单显示结束."  # 调试信息
 }
+
+
 
 # 主程序
 main() {
