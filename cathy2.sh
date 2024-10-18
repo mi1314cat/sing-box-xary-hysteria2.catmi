@@ -50,7 +50,7 @@ generate_port() {
         port=$((RANDOM % 10001 + 10000))
         read -p "请为 ${protocol} 输入监听端口(默认为随机生成): " user_input
         port=${user_input:-$port}
-        ss -tuln | grep -q ":$port\b" || { echo "$port"; return $port; }
+        ss -tuln | grep -q ":$port\b" || { echo "$port"; return 0; }
         echo "端口 $port 被占用，请输入其他端口"
     done
 }
@@ -62,65 +62,68 @@ create_shortcut() {
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
 EOF
     chmod +x /usr/local/bin/catmihy2
-    print_info "快捷方式 'catmihy2' 已创建，现在可以直接使用 'catmihy2' 命令运行脚本"
+    print_info "快捷方式 'catmihy2' 已创建，可使用 'catmihy2' 命令运行脚本"
 }
 
 # 安装 Hysteria 2
+install_hysteria() {
+    print_info "开始安装 Hysteria 2..."
 
     # 下载并安装 Hysteria 2
-    bash <(curl -fsSL https://get.hy2.sh/)
-    if [[ $? -ne 0 ]]; then
+    if ! bash <(curl -fsSL https://get.hy2.sh/); then
         print_error "Hysteria 2 安装失败"
-        exit 1
+        return 1
     fi
-    
- # 生成自签证书
- print_with_delay "生成自签名证书..." 0.03
- openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
-     -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-    -subj "/CN=bing.com" -days 36500 && \
-    sudo chown hysteria /etc/hysteria/server.key && \
-    sudo chown hysteria /etc/hysteria/server.crt
+
+    # 生成自签名证书
+    print_info "生成自签名证书..."
+    openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
+        -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
+        -subj "/CN=bing.com" -days 36500
+    chown hysteria:hysteria /etc/hysteria/server.key
+    chown hysteria:hysteria /etc/hysteria/server.crt
+
     # 生成随机密码
     AUTH_PASSWORD=$(openssl rand -base64 16)
-    
+
     # 提示输入监听端口号
     PORT=$(generate_port "Hysteria")
-    
-   # 获取公网 IP 地址
-  PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
-  PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
-  echo "公网 IPv4 地址: $PUBLIC_IP_V4"
-  echo "公网 IPv6 地址: $PUBLIC_IP_V6"
 
-  # 选择使用哪个公网 IP 地址
-  echo "请选择要使用的公网 IP 地址:"
-echo "1. $PUBLIC_IP_V4"
-echo "2. $PUBLIC_IP_V6"
-read -p "请输入对应的数字选择: " IP_CHOICE
+    # 获取公网 IP 地址
+    PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
+    PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
+    echo "公网 IPv4 地址: $PUBLIC_IP_V4"
+    echo "公网 IPv6 地址: $PUBLIC_IP_V6"
 
-if [ "$IP_CHOICE" -eq 1 ]; then
-    PUBLIC_IP=$PUBLIC_IP_V4
-elif [ "$IP_CHOICE" -eq 2 ]; then
-    PUBLIC_IP=$PUBLIC_IP_V6
-else
-    echo "无效选择，退出脚本"
-    exit 1
-fi
+    # 选择使用哪个公网 IP 地址
+    echo "请选择要使用的公网 IP 地址:"
+    echo "1. $PUBLIC_IP_V4"
+    echo "2. $PUBLIC_IP_V6"
+    read -p "请输入对应的数字选择: " IP_CHOICE
+
+    if [ "$IP_CHOICE" -eq 1 ]; then
+        PUBLIC_IP=$PUBLIC_IP_V4
+    elif [ "$IP_CHOICE" -eq 2 ]; then
+        PUBLIC_IP=$PUBLIC_IP_V6
+    else
+        print_error "无效选择，退出脚本"
+        return 1
+    fi
+
     # 创建服务端配置
     create_server_config
-    
+
     # 创建客户端配置
     create_client_config
-    
+
     # 启动服务
     systemctl enable --now hysteria-server.service
-    
+
     # 创建流量监控
     create_traffic_monitor
-    
+
     print_info "Hysteria 2 安装完成！"
-    print_info "服务器地址：${IP}"
+    print_info "服务器地址：${PUBLIC_IP}"
     print_info "端口：${PORT}"
     print_info "密码：${AUTH_PASSWORD}"
     print_info "配置文件已保存到：/root/hy2/config.yaml"
@@ -144,8 +147,6 @@ masquerade:
   proxy:
     url: https://bing.com
     rewriteHost: true
-
-
 EOF
 }
 
@@ -183,8 +184,8 @@ dns:
       - 240.0.0.0/4
 
 proxies:        
-  - name: Hy2-${IP}
-    server: ${IP}
+  - name: Hy2-${PUBLIC_IP}
+    server: ${PUBLIC_IP}
     port: ${PORT}
     type: hysteria2
     up: "45 Mbps"
@@ -200,13 +201,13 @@ proxy-groups:
     type: select
     proxies:
       - 自动选择
-      - Hy2-${IP}
+      - Hy2-${PUBLIC_IP}
       - DIRECT
 
   - name: 自动选择
     type: url-test
     proxies:
-      - Hy2-${IP}
+      - Hy2-${PUBLIC_IP}
     url: "http://www.gstatic.com/generate_204"
     interval: 300
     tolerance: 50
@@ -218,8 +219,10 @@ rules:
 EOF
 }
 
-
-
+# 创建流量监控
+create_traffic_monitor() {
+    cat > /usr/local/bin/hy2_traffic_monitor.sh << 'EOF'
+#!/bin/bash
 
 # 颜色定义
 RED="\033[31m"
@@ -294,9 +297,77 @@ while true; do
     check_reset
     check_traffic
     sleep 60
-done 
+done
+EOF
+    chmod +x /usr/local/bin/hy2_traffic_monitor.sh
 
-# 在主脚本中添加流量管理函数
+    # 创建流量监控服务
+    cat > /etc/systemd/system/hy2-traffic-monitor.service << 'EOF'
+[Unit]
+Description=Hysteria 2 Traffic Monitor
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/hy2_traffic_monitor.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable --now hy2-traffic-monitor.service
+}
+
+# 卸载 Hysteria 2
+uninstall_hysteria() {
+    print_info "开始卸载 Hysteria 2..."
+    systemctl stop hysteria-server.service
+    systemctl disable hysteria-server.service
+    systemctl stop hy2-traffic-monitor.service
+    systemctl disable hy2-traffic-monitor.service
+    rm -rf /etc/hysteria
+    rm -rf /root/hy2
+    rm -f /usr/local/bin/catmihy2
+    rm -f /usr/local/bin/hy2_traffic_monitor.sh
+    rm -f /etc/systemd/system/hy2-traffic-monitor.service
+    systemctl daemon-reload
+    print_info "Hysteria 2 已成功卸载"
+}
+
+# 更新 Hysteria 2
+update_hysteria() {
+    print_info "开始更新 Hysteria 2..."
+    if ! bash <(curl -fsSL https://get.hy2.sh/); then
+        print_error "更新失败"
+        return 1
+    fi
+    print_info "更新成功"
+    systemctl restart hysteria-server.service
+}
+
+# 查看客户端配置
+view_client_config() {
+    if [ -f "/root/hy2/config.yaml" ]; then
+        cat /root/hy2/config.yaml
+    else
+        print_error "客户端配置文件不存在"
+    fi
+}
+
+# 修改端口并同步到客户端配置
+modify_port() {
+    read -p "请输入新的端口号: " new_port
+    if [[ "$new_port" =~ ^[0-9]+$ ]]; then
+        sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
+        sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
+        print_info "端口已修改为 ${new_port}"
+        systemctl restart hysteria-server.service
+    else
+        print_error "无效的端口号"
+    fi
+}
+
+# 流量管理
 traffic_management() {
     while true; do
         hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
@@ -331,7 +402,7 @@ traffic_management() {
             1) 
                 read -p "请输入流量限制(GB): " new_limit
                 if [[ "$new_limit" =~ ^[0-9]+$ ]]; then
-                    echo "TRAFFIC_LIMIT=$new_limit" > /etc/hysteria/traffic_config
+                    sed -i "s/^TRAFFIC_LIMIT=.*/TRAFFIC_LIMIT=${new_limit}/" /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量限制已设置为 ${new_limit}GB${PLAIN}"
                     systemctl restart hy2-traffic-monitor.service
                 else
@@ -356,17 +427,17 @@ traffic_management() {
                 fi
                 ;;
             4)
-                systemctl restart hysteria-server.service
+                systemctl restart hy2-traffic-monitor.service
                 echo -e "${GREEN}流量统计已重置${PLAIN}"
                 ;;
             5)
                 current_status=$(grep TRAFFIC_MANAGEMENT_ENABLED /etc/hysteria/traffic_config | cut -d= -f2)
                 if [[ "$current_status" == "true" ]]; then
-                    echo "TRAFFIC_MANAGEMENT_ENABLED=false" > /etc/hysteria/traffic_config
+                    sed -i "s/^TRAFFIC_MANAGEMENT_ENABLED=.*/TRAFFIC_MANAGEMENT_ENABLED=false/" /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量管理已关闭${PLAIN}"
                     systemctl stop hy2-traffic-monitor.service
                 else
-                    echo "TRAFFIC_MANAGEMENT_ENABLED=true" > /etc/hysteria/traffic_config
+                    sed -i "s/^TRAFFIC_MANAGEMENT_ENABLED=.*/TRAFFIC_MANAGEMENT_ENABLED=true/" /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量管理已开启${PLAIN}"
                     systemctl start hy2-traffic-monitor.service
                 fi
@@ -384,15 +455,15 @@ traffic_management() {
                 case "${reset_choice}" in
                     0) break ;;
                     1)
-                        echo "TRAFFIC_RESET_MODE=monthly" > /etc/hysteria/traffic_config
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=monthly/" /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置方式已设置为每月的第一天重置${PLAIN}"
                         ;;
                     2)
-                        echo "TRAFFIC_RESET_MODE=30days" > /etc/hysteria/traffic_config
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=30days/" /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置方式已设置为每30天重置${PLAIN}"
                         ;;
                     3)
-                        echo "TRAFFIC_RESET_MODE=manual" > /etc/hysteria/traffic_config
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=manual/" /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置方式已设置为不循环重置${PLAIN}"
                         ;;
                     *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
@@ -400,59 +471,9 @@ traffic_management() {
                 ;;
             *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
         esac
+
         echo && read -p "按回车键继续..." && echo
     done
-}
-
-
-# 卸载 Hysteria 2
-uninstall_hysteria() {
-    print_info "开始卸载 Hysteria 2..."
-    systemctl stop hysteria-server.service
-    systemctl disable hysteria-server.service
-    systemctl stop hy2-traffic-monitor.service
-    systemctl disable hy2-traffic-monitor.service
-    rm -rf /etc/hysteria
-    rm -rf /root/hy2
-    rm -f /usr/local/bin/catmihy2
-    rm -f /usr/local/bin/hy2_traffic_monitor.sh
-    rm -f /etc/systemd/system/hy2-traffic-monitor.service
-    systemctl daemon-reload
-    print_info "Hysteria 2 已成功卸载"
-}
-
-# 更新 Hysteria 2
-update_hysteria() {
-    print_info "开始更新 Hysteria 2..."
-    bash <(curl -fsSL https://get.hy2.sh/)
-    if [[ $? -ne 0 ]]; then
-        print_error "更新失败"
-        return 1
-    fi
-    print_info "更新成功"
-    systemctl restart hysteria-server.service
-}
-
-# 查看客户端配置
-view_client_config() {
-    if [ -f "/root/hy2/config.yaml" ]; then
-        cat /root/hy2/config.yaml
-    else
-        print_error "客户端配置文件不存在"
-    fi
-}
-
-# 修改端口并同步到客户端配置
-modify_port() {
-    read -p "请输入新的端口号: " new_port
-    if [[ "$new_port" =~ ^[0-9]+$ ]]; then
-        sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
-        sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
-        print_info "端口已修改为 ${new_port}"
-        systemctl restart hysteria-server.service
-    else
-        print_error "无效的端口号"
-    fi
 }
 
 # 主菜单
@@ -460,8 +481,8 @@ show_menu() {
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hy2_traffic_monitor_status=$(systemctl is-active hy2-traffic-monitor.service)
-    hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
-    hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
+    hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; elseecho -e "${RED}未启动${PLAIN}"; fi)
+    hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; thenecho -e "${GREEN}启动${PLAIN}"; elseecho -e "${RED}未启动${PLAIN}"; fi)
     
     # 获取流量信息
     if systemctl is-active --quiet hysteria-server.service; then
@@ -513,7 +534,6 @@ show_menu() {
 
     echo && read -p "按回车键继续..." && echo
 }
-
 
 # 主程序
 main() {
