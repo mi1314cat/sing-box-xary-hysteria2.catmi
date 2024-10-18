@@ -292,11 +292,13 @@ modify_config() {
 
 # 主菜单
 show_menu() {
+    clear
     # 获取服务状态
     hysteria_server_status=$(systemctl is-active hysteria-server.service)
     hysteria_server_status_text=$(if [[ "$hysteria_server_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     
     # 显示菜单
+    print_with_delay "**************Hysteria 2.catmi*************" 0.03
     echo -e "
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
