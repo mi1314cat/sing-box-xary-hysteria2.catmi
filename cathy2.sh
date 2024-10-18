@@ -300,7 +300,6 @@ show_menu() {
     
    
     echo -e "
-  **************Hysteria 2.catmi*************
   ${GREEN}Hysteria 2 管理脚本${PLAIN}
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
