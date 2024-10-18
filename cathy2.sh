@@ -91,13 +91,14 @@ install_hysteria() {
         return 1
     fi
 
-    # 生成自签证书
-  print_with_delay "生成自签名证书..." 0.03
-  openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
-    -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-    -subj "/CN=bing.com" -days 36500 && \
-    sudo chown hysteria /etc/hysteria/server.key && \
-    sudo chown hysteria /etc/hysteria/server.crt
+    # 生成自签名证书
+    print_info "生成自签名证书..."
+    openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
+        -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
+        -subj "/CN=bing.com" -days 36500
+    chown hysteria:hysteria /etc/hysteria/server.key
+    chown hysteria:hysteria /etc/hysteria/server.crt
+
     # 生成随机密码
     AUTH_PASSWORD=$(openssl rand -base64 16)
 
@@ -112,18 +113,25 @@ install_hysteria() {
 
     # 选择使用哪个公网 IP 地址
     echo "请选择要使用的公网 IP 地址:"
-    echo "1. $PUBLIC_IP_V4"
+    echo "1. $PUBLIC_IP_V4 (默认)"
     echo "2. $PUBLIC_IP_V6"
+    echo "3. 自定义 IP"
     read -p "请输入对应的数字选择: " IP_CHOICE
 
-    if [ "$IP_CHOICE" -eq 1 ]; then
-        PUBLIC_IP=$PUBLIC_IP_V4
-    elif [ "$IP_CHOICE" -eq 2 ]; then
-        PUBLIC_IP=$PUBLIC_IP_V6
-    else
-        print_error "无效选择，退出脚本"
-        return 1
-    fi
+    case "$IP_CHOICE" in
+        1)
+            PUBLIC_IP=$PUBLIC_IP_V4
+            ;;
+        2)
+            PUBLIC_IP=$PUBLIC_IP_V6
+            ;;
+        3)
+            read -p "请输入自定义的公网 IP 地址: " PUBLIC_IP
+            ;;
+        *)
+            PUBLIC_IP=$PUBLIC_IP_V4
+            ;;
+    esac
 
     # 创建服务端配置
     create_server_config
@@ -263,17 +271,24 @@ view_client_config() {
     fi
 }
 
-# 修改端口并同步到客户端配置
-modify_port() {
-    read -p "请输入新的端口号: " new_port
-    if [[ "$new_port" =~ ^[0-9]+$ ]]; then
-        sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
-        sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
-        print_info "端口已修改为 ${new_port}"
-        systemctl restart hysteria-server.service
-    else
-        print_error "无效的端口号"
-    fi
+# 修改配置
+modify_config() {
+    read -p "请输入新的端口号 (默认随机生成): " new_port
+    new_port=${new_port:-$(generate_port "Hysteria")}
+
+    read -p "请输入新的密码 (默认随机生成): " new_password
+    new_password=${new_password:-$(openssl rand -base64 16)}
+
+    sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
+    sed -i "s/^password: .*/password: ${new_password}/" /etc/hysteria/config.yaml
+
+    sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
+    sed -i "s/^password: .*/password: ${new_password}/" /root/hy2/config.yaml
+
+    print_info "配置已修改为："
+    print_info "端口：${new_port}"
+    print_info "密码：${new_password}"
+    systemctl restart hysteria-server.service
 }
 
 # 主菜单
@@ -291,7 +306,7 @@ show_menu() {
   ${GREEN}3.${PLAIN} 更新 Hysteria 2
   ${GREEN}4.${PLAIN} 重启 Hysteria 2
   ${GREEN}5.${PLAIN} 查看客户端配置
-  ${GREEN}6.${PLAIN} 修改端口
+  ${GREEN}6.${PLAIN} 修改配置
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------
   Hysteria 2 服务状态: ${hysteria_server_status_text}
@@ -306,7 +321,7 @@ show_menu() {
         3) update_hysteria ;;
         4) systemctl restart hysteria-server.service ;;
         5) view_client_config ;;
-        6) modify_port ;;
+        6) modify_config ;;
         *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
     esac
 
