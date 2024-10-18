@@ -120,6 +120,10 @@ install_hysteria() {
     
     # 获取监听端口
     PORT=$(generate_port)
+    read -p "是否使用随机生成的端口 ${PORT}？如果不是，请输入自定义端口（直接回车使用随机端口）: " custom_port
+    if [[ -n "${custom_port}" ]]; then
+        PORT=${custom_port}
+    fi
     
     # 获取公网IP
     IP=$(get_public_ip)
@@ -439,6 +443,28 @@ update_hysteria() {
     systemctl restart hysteria-server.service
 }
 
+# 查看客户端配置
+view_client_config() {
+    if [ -f "/root/hy2/config.yaml" ]; then
+        cat /root/hy2/config.yaml
+    else
+        print_error "客户端配置文件不存在"
+    fi
+}
+
+# 修改端口并同步到客户端配置
+modify_port() {
+    read -p "请输入新的端口号: " new_port
+    if [[ "$new_port" =~ ^[0-9]+$ ]]; then
+        sed -i "s/^listen: :[0-9]*$/listen: :${new_port}/" /etc/hysteria/config.yaml
+        sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
+        print_info "端口已修改为 ${new_port}"
+        systemctl restart hysteria-server.service
+    else
+        print_error "无效的端口号"
+    fi
+}
+
 # 更新后的显示主菜单函数
 show_menu() {
     echo -e "
@@ -448,8 +474,8 @@ show_menu() {
   ${GREEN}2.${PLAIN} 卸载 Hysteria 2
   ${GREEN}3.${PLAIN} 更新 Hysteria 2
   ${GREEN}4.${PLAIN} 重启 Hysteria 2
-  ${GREEN}5.${PLAIN} 查看配置
-  ${GREEN}6.${PLAIN} 修改配置
+  ${GREEN}5.${PLAIN} 查看客户端配置
+  ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------"
@@ -461,8 +487,8 @@ show_menu() {
         2) uninstall_hysteria ;;
         3) update_hysteria ;;
         4) systemctl restart hysteria-server.service ;;
-        5) cat /etc/hysteria/config.yaml ;;
-        6) nano /etc/hysteria/config.yaml ;;
+        5) view_client_config ;;
+        6) modify_port ;;
         7) traffic_management ;;
         *) print_error "无效的选项 ${choice}" ;;
     esac
@@ -478,4 +504,4 @@ main() {
     done
 }
 
-main "$@" 
+main "$@"
