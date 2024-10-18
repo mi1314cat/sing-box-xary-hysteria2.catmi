@@ -135,6 +135,17 @@ install_hysteria() {
     # 获取公共IP
     IP=$(get_public_ip)
     
+    # 选择IP类型
+    read -p "使用自动检测的IP ${IP}? (y/n, 默认: y): " ip_response
+    if [ "${ip_response,,}" != "y" ]; then
+        read -p "输入自定义IP: " custom_ip
+        if [ -z "$custom_ip" ]; then
+            print_error "无效的IP地址。"
+            exit 1
+        fi
+        IP=$custom_ip
+    fi
+    
     # 创建服务器配置
     create_server_config
     
@@ -439,6 +450,8 @@ traffic_management() {
   ----------------------"
         
         read -p "输入选项 [0-6]: " choice
+        echo "选择的选项: ${choice}"  # 调试信息
+        
         case "${choice}" in
             0) break ;;
             1) 
@@ -514,7 +527,10 @@ traffic_management() {
                 ;;
             *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
         esac
-        echo && read -p "按回车键继续..." && echo
+        
+        echo "按回车键继续..."  # 调试信息
+        read -p ""  # 读取回车键
+        echo
     done
 }
 
@@ -607,7 +623,9 @@ show_menu() {
   ----------------------
   ${GREEN}0.${PLAIN} 退出
   ----------------------"
+    
     read -p "输入选项 [0-7]: " choice
+    echo "选择的选项: ${choice}"  # 调试信息
     
     case "${choice}" in
         0) exit 0 ;;
@@ -620,7 +638,10 @@ show_menu() {
         7) traffic_management ;;
         *) print_error "无效的选项 ${choice}" ;;
     esac
-    echo && read -p "按回车键继续..." && echo
+    
+    echo "按回车键继续..."  # 调试信息
+    read -p ""  # 读取回车键
+    echo
 }
 
 # 主程序
