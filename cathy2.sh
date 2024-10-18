@@ -67,7 +67,7 @@ generate_port() {
 create_shortcut() {
     cat > /usr/local/bin/catmi << 'EOF'
 #!/bin/bash
-bash <(curl -fsSL https://raw.githubusercontent.com/你的GitHub用户名/hysteria2-script/main/install.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
 EOF
     chmod +x /usr/local/bin/catmi
     print_info "快捷方式 'catmi' 已创建，现在可以直接使用 'catmi' 命令运行脚本"
