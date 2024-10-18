@@ -208,8 +208,8 @@ proxies:
     server: ${IP}
     port: ${PORT}
     type: hysteria2
-    up: "45Mbps"
-    down: "150 Mbps"
+    up: "100 Mbps"
+    down: "100 Mbps"
     sni: bing.com
     password: ${AUTH_PASSWORD}
     skip-cert-verify: true
@@ -386,7 +386,7 @@ EOF
 
     systemctl daemon-reload
     systemctl enable hy2-traffic-monitor.service
-    systemctl start hy2-traffic-monitor.service
+    systemctl stop hy2-traffic-monitor.service  # 默认关闭流量管理服务
 }
 
 # 在主脚本中添加流量管理函数
