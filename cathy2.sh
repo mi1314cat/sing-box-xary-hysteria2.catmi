@@ -31,6 +31,18 @@ EOF
     echo -e "${GREEN}版本: ${PLAIN}1.0.0"
     echo -e "----------------------------------------"
 }
+# 生成随机端口
+generate_port() {
+    local protocol="$1"
+    while :; do
+        port=$((RANDOM % 10001 + 10000))
+        read -p "请为 ${protocol} 输入监听端口(默认为随机生成): " user_input
+        port=${user_input:-$port}
+        ss -tuln | grep -q ":$port\b" || { echo "$port"; return $port; }
+        echo "端口 $port 被占用，请输入其他端口"
+    done
+}
+
 
 # 彩色消息
 print_info() {
@@ -53,7 +65,7 @@ EOF
     chmod +x /usr/local/bin/catmihy2
     print_info "快捷方式 'catmihy2' 创建。使用 'catmihy2' 直接运行此脚本。"
 }
-
+# 安装 Hysteria 2
 install_hysteria() {
     print_info "安装 Hysteria 2..."
 
@@ -74,8 +86,9 @@ install_hysteria() {
     chmod 644 /etc/hysteria/server.key
 
     AUTH_PASSWORD=$(openssl rand -base64 16)
-    PORT=$(generate_port "Hysteria")
-
+    # 提示输入监听端口号
+    PORT=$(generate_port "Hysteria")  # 添加缺失的闭合括号
+    
     # 获取公网 IP 地址
     PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
     PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
@@ -85,6 +98,7 @@ install_hysteria() {
     echo "请选择要使用的公网 IP 地址:"
     echo "1. $PUBLIC_IP_V4"
     echo "2. $PUBLIC_IP_V6"
+    
     read -p "请输入对应的数字选择: " IP_CHOICE
 
     if [ "$IP_CHOICE" -eq 1 ]; then
@@ -98,9 +112,17 @@ install_hysteria() {
 
     create_server_config
     create_client_config
+    
+    # 启动服务
     systemctl enable --now hysteria-server.service
     if [ $? -ne 0 ]; then
         print_error "服务启动失败，请检查错误日志。"
+        exit 1
+    fi
+
+    # 检查服务状态
+    if ! systemctl is-active --quiet hysteria-server.service; then
+        print_error "Hysteria 2 服务未能成功启动。"
         exit 1
     fi
 
@@ -115,7 +137,6 @@ install_hysteria() {
     print_info "返回主菜单..."
     show_menu  # 确保返回主菜单
 }
-
 
 
 # 创建服务器配置
