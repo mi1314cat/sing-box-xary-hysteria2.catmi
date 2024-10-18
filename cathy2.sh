@@ -287,6 +287,12 @@ modify_config() {
     sed -i "s/^port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml
     sed -i "s/^password: .*/password: ${new_password}/" /root/hy2/config.yaml
 
+    # 调试信息
+    echo "调试: 服务端配置文件内容"
+    cat /etc/hysteria/config.yaml
+    echo "调试: 客户端配置文件内容"
+    cat /root/hy2/config.yaml
+
     print_info "配置已修改为："
     print_info "端口：${new_port}"
     print_info "密码：${new_password}"
