@@ -261,35 +261,27 @@ fi
 
 
 # 获取当前流量
+
 get_traffic() {
     echo "调试: 进入 get_traffic 函数"
-    local log_file="/var/log/hysteria/hysteria.log"
     
-    if [ ! -f "$log_file" ]; then
-        echo "调试: 日志文件不存在"
-        echo "0 0"
-        return
-    fi
-
-    # 从日志文件中提取最新的上传和下载流量
-    local upload=$(grep "Upload" "$log_file" | tail -n 1 | awk '{print $2}' | numfmt --from=iec)
-    local download=$(grep "Download" "$log_file" | tail -n 1 | awk '{print $2}' | numfmt --from=iec)
+    # 使用 ss 命令获取网络接口的流量信息
+    local ifaces=$(ss -i | grep -oP '^\w+' | sort -u)
     
-    echo "调试: 上传流量: ${upload}"
-    echo "调试: 下载流量: ${download}"
+    local total_upload=0
+    local total_download=0
     
-    # 确保变量为数字
-    if ! [[ "$upload" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-        echo "调试: 上传流量不是数字，设置为0"
-        upload=0
-    fi
-    if ! [[ "$download" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-        echo "调试: 下载流量不是数字，设置为0"
-        download=0
-    fi
+    for iface in $ifaces; do
+        local upload=$(cat /sys/class/net/$iface/statistics/tx_bytes)
+        local download=$(cat /sys/class/net/$iface/statistics/rx_bytes)
+        
+        total_upload=$((total_upload + upload))
+        total_download=$((total_download + download))
+    done
     
-    upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc)
-    download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc)
+    # 将字节转换为GB
+    upload_gb=$(echo "scale=2; $total_upload/1024/1024/1024" | bc)
+    download_gb=$(echo "scale=2; $total_download/1024/1024/1024" | bc)
     
     echo "调试: 上传流量 (GB): ${upload_gb}"
     echo "调试: 下载流量 (GB): ${download_gb}"
@@ -369,7 +361,7 @@ EOF
 
 
 # 流量管理
-# 流量管理
+
 traffic_management() {
     while true; do
         echo "调试: 正在获取流量监控服务状态..."
