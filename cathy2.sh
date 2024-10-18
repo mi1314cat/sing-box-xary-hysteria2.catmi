@@ -123,7 +123,12 @@ modify_config() {
         return 1
     fi
 
-    if sed -i "s|^password: .*|password: ${new_password}|" /etc/hysteria/config.yaml; then
+    # 调试信息，检查当前密码
+    echo "当前服务端密码: ${current_password}"
+    echo "新的服务端密码: ${new_password}"
+
+    # 修改服务端密码
+    if sed -i "s|^  password: .*|  password: ${new_password}|" /etc/hysteria/config.yaml; then
         echo "成功修改服务端的密码"
     else
         echo "修改服务端的密码失败"
