@@ -116,14 +116,14 @@ modify_config() {
     cat /etc/hysteria/config.yaml
 
     # 修改服务端配置
-    if sed -i "s/^listen: \":[0-9]*\"/listen: \"${new_port}\"/" /etc/hysteria/config.yaml; then
+    if sed -i "s|^listen: \".*\"|listen: \"${new_port}\"|" /etc/hysteria/config.yaml; then
         echo "成功修改服务端的端口号"
     else
         echo "修改服务端的端口号失败"
         return 1
     fi
 
-    # 尝试更宽松地匹配密码行
+    # 修改服务端密码
     if sed -i "s|^ *password: .*|  password: ${new_password}|" /etc/hysteria/config.yaml; then
         echo "成功修改服务端的密码"
     else
@@ -168,8 +168,6 @@ modify_config() {
         echo "重启服务失败"
     fi
 }
-
-
 
 # 主菜单
 show_menu() {
