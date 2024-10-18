@@ -397,8 +397,14 @@ traffic_management() {
         hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
         
         # 获取流量信息
-        read up_gb down_gb <<< $(get_traffic)
-        total_gb=$(echo "$up_gb + $down_gb" | bc)
+        if systemctl is-active --quiet hysteria-server.service; then
+            read up_gb down_gb <<< $(get_traffic)
+            total_gb=$(echo "$up_gb + $down_gb" | bc)
+        else
+            up_gb="0"
+            down_gb="0"
+            total_gb="0"
+        fi
         limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
         remaining_gb=$(echo "$limit - $total_gb" | bc)
         
@@ -553,8 +559,14 @@ show_menu() {
     hy2_traffic_monitor_status_text=$(if [[ "$hy2_traffic_monitor_status" == "active" ]]; then echo -e "${GREEN}启动${PLAIN}"; else echo -e "${RED}未启动${PLAIN}"; fi)
     
     # 获取流量信息
-    read up_gb down_gb <<< $(get_traffic)
-    total_gb=$(echo "$up_gb + $down_gb" | bc)
+    if systemctl is-active --quiet hysteria-server.service; then
+        read up_gb down_gb <<< $(get_traffic)
+        total_gb=$(echo "$up_gb + $down_gb" | bc)
+    else
+        up_gb="0"
+        down_gb="0"
+        total_gb="0"
+    fi
     limit=$(cat /etc/hysteria/traffic_config | grep TRAFFIC_LIMIT | cut -d= -f2)
     remaining_gb=$(echo "$limit - $total_gb" | bc)
     
