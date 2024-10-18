@@ -273,9 +273,10 @@ get_traffic() {
     local download=$(echo "$current_stats" | jq -r '.rx' | numfmt --from=iec --invalid=ignore)
     echo "调试4: download = $download"  # 调试信息
     
-    upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc)
+    # 确保数据格式正确
+    upload_gb=$(echo "scale=2; $upload/1024/1024/1024" | bc 2>/dev/null)
     echo "调试5: upload_gb = $upload_gb"  # 调试信息
-    download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc)
+    download_gb=$(echo "scale=2; $download/1024/1024/1024" | bc 2>/dev/null)
     echo "调试6: download_gb = $download_gb"  # 调试信息
     
     echo "$upload_gb $download_gb"
@@ -284,7 +285,7 @@ get_traffic() {
 # 检查流量并记录
 check_traffic() {
     read up_gb down_gb <<< $(get_traffic)
-    total_gb=$(echo "$up_gb + $down_gb" | bc)
+    total_gb=$(echo "$up_gb + $down_gb" | bc 2>/dev/null)
     
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Upload: ${up_gb}GB, Download: ${down_gb}GB, Total: ${total_gb}GB" >> $LOG_FILE
     
@@ -400,7 +401,7 @@ traffic_management() {
             echo "调试1"  # 调试信息
             read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
             echo "调试2: up_gb = $up_gb, down_gb = $down_gb"  # 调试信息
-            total_gb=$(echo "$up_gb + $down_gb" | bc)
+            total_gb=$(echo "$up_gb + $down_gb" | bc 2>/dev/null)
         else
             up_gb="0"
             down_gb="0"
@@ -409,7 +410,7 @@ traffic_management() {
         echo "调试3"  # 调试信息
 
         limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
-        remaining_gb=$(echo "$limit - $total_gb" | bc)
+        remaining_gb=$(echo "$limit - $total_gb" | bc 2>/dev/null)
         
         echo -e "
   ${GREEN}流量管理${PLAIN}
@@ -521,7 +522,7 @@ show_menu() {
         echo "调试1"  # 调试信息
         read up_gb down_gb <<< $(/usr/local/bin/hy2_traffic_monitor.sh get_traffic)
         echo "调试2: up_gb = $up_gb, down_gb = $down_gb"  # 调试信息
-        total_gb=$(echo "$up_gb + $down_gb" | bc)
+        total_gb=$(echo "$up_gb + $down_gb" | bc 2>/dev/null)
     else
         up_gb="0"
         down_gb="0"
@@ -530,7 +531,7 @@ show_menu() {
     echo "调试3"  # 调试信息
 
     limit=$(grep TRAFFIC_LIMIT /etc/hysteria/traffic_config | cut -d= -f2)
-    remaining_gb=$(echo "$limit - $total_gb" | bc)
+    remaining_gb=$(echo "$limit - $total_gb" | bc 2>/dev/null)
 
     # 显示菜单
     echo -e "
