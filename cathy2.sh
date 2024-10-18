@@ -47,22 +47,14 @@ print_warning() {
 
 # 生成随机端口
 generate_port() {
-    local min_port=10000
-    local max_port=65535
-    local max_retries=10
-    local retries=0
-    
-    while [ $retries -lt $max_retries ]; do
-        local port=$(shuf -i ${min_port}-${max_port} -n 1)
-        if ! ss -tuln | grep -q ":${port}\b"; then
-            echo "${port}"
-            return 0
-        fi
-        ((retries++))
+    local protocol="$1"
+    while :; do
+        port=$((RANDOM % 10001 + 10000))
+        read -p "请为 ${protocol} 输入监听端口(默认为随机生成): " user_input
+        port=${user_input:-$port}
+        ss -tuln | grep -q ":$port\b" || { echo "$port"; return $port; }
+        echo "端口 $port 被占用，请输入其他端口"
     done
-    
-    print_error "在 ${max_retries} 次重试后未能找到可用的端口。"
-    exit 1
 }
 
 # 创建快捷方式
@@ -75,30 +67,13 @@ EOF
     print_info "快捷方式 'catmihy2' 创建。使用 'catmihy2' 直接运行此脚本。"
 }
 
-# 安装基础依赖
-install_base() {
-    if [ -f /etc/debian_version ]; then
-        apt update -y
-        apt install -y curl wget tar openssl nano bc
-        if [ $? -ne 0 ]; then
-            print_error "安装基础依赖失败。"
-            exit 1
-        fi
-    elif [ -f /etc/redhat-release ]; then
-        yum install -y curl wget tar openssl nano bc
-        if [ $? -ne 0 ]; then
-            print_error "安装基础依赖失败。"
-            exit 1
-        fi
-    fi
-}
+
 
 # 安装 Hysteria 2
 install_hysteria() {
     print_info "安装 Hysteria 2..."
     
-    # 安装基础依赖
-    install_base
+    
     
     # 下载并安装 Hysteria 2
     bash <(curl -fsSL https://get.hy2.sh/)
@@ -121,61 +96,28 @@ install_hysteria() {
     AUTH_PASSWORD=$(openssl rand -base64 16)
     
     # 获取监听端口
-    PORT=$(generate_port)
-    read -p "使用随机生成的端口 ${PORT}? (y/n, 默认: y): " response
-    if [ "${response,,}" != "y" ]; then
-        read -p "输入自定义端口: " custom_port
-        if ! [[ "$custom_port" =~ ^[0-9]+$ ]]; then
-            print_error "无效的端口号。"
-            exit 1
-        fi
-        PORT=$custom_port
-    fi
+   PORT=$(generate_port "Hysteria")
     
-    # 获取公共IP
-    IP=$(get_public_ip)
-    
-    # 选择IP类型
-    read -p "使用自动检测的IP ${IP}? (y/n, 默认: y): " ip_response
-    if [ "${ip_response,,}" != "y" ]; then
-        echo -e "1. IPv4"
-        echo -e "2. IPv6"
-        echo -e "3. 自定义IP"
-        while true; do
-            read -p "选择IP类型 [1-3]: " ip_type
-            case "${ip_type}" in
-                1)
-                    IP=$(curl -s4m8 ip.gs)
-                    if [ -z "$IP" ]; then
-                        print_error "未能获取IPv4地址。"
-                        exit 1
-                    fi
-                    break
-                    ;;
-                2)
-                    IP=$(curl -s6m8 ip.gs)
-                    if [ -z "$IP" ]; then
-                        print_error "未能获取IPv6地址。"
-                        exit 1
-                    fi
-                    break
-                    ;;
-                3)
-                    read -p "输入自定义IP: " custom_ip
-                    if [ -z "$custom_ip" ]; then
-                        print_error "无效的IP地址。"
-                        exit 1
-                    fi
-                    IP=$custom_ip
-                    break
-                    ;;
-                *)
-                    print_error "无效的选择。请重试。"
-                    ;;
-            esac
-        done
-    fi
-    
+ # 获取公网 IP 地址
+PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
+PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
+echo "公网 IPv4 地址: $PUBLIC_IP_V4"
+echo "公网 IPv6 地址: $PUBLIC_IP_V6"
+
+# 选择使用哪个公网 IP 地址
+echo "请选择要使用的公网 IP 地址:"
+echo "1. $PUBLIC_IP_V4"
+echo "2. $PUBLIC_IP_V6"
+read -p "请输入对应的数字选择: " IP_CHOICE
+
+if [ "$IP_CHOICE" -eq 1 ]; then
+    PUBLIC_IP=$PUBLIC_IP_V4
+elif [ "$IP_CHOICE" -eq 2 ]; then
+    PUBLIC_IP=$PUBLIC_IP_V6
+else
+    echo "无效选择，退出脚本"
+    exit 1
+fi
     # 创建服务器配置
     create_server_config
     
@@ -285,38 +227,7 @@ rules:
 EOF
 }
 
-# 获取公共IP
-get_public_ip() {
-    local ipv4=$(curl -s4m8 ip.gs)
-    local ipv6=$(curl -s6m8 ip.gs)
-    
-    if [ -z "${ipv4}" ] && [ -z "${ipv6}" ]; then
-        print_error "未能获取公共IP地址。"
-        exit 1
-    fi
-    
-    if [ -n "${ipv4}" ] && [ -n "${ipv6}" ]; then
-        print_info "检测到IPv4和IPv6地址。"
-        echo -e "1. IPv4: ${ipv4}"
-        echo -e "2. IPv6: ${ipv6}"
-        while true; do
-            read -p "选择IP类型 [1-2]: " ip_type
-            if [ "${ip_type}" == "1" ]; then
-                echo "${ipv4}"
-                return 0
-            elif [ "${ip_type}" == "2" ]; then
-                echo "${ipv6}"
-                return 0
-            else
-                print_error "无效的选择。请重试。"
-            fi
-        done
-    elif [ -n "${ipv4}" ]; then
-        echo "${ipv4}"
-    elif [ -n "${ipv6}" ]; then
-        echo "${ipv6}"
-    fi
-}
+
 
 # 创建流量监控
 create_traffic_monitor() {
