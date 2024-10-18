@@ -115,8 +115,8 @@ modify_config() {
     echo "修改前服务端配置内容:"
     cat /etc/hysteria/config.yaml
 
-    # 修改服务端配置
-    if sed -i "s|^listen: \".*\"|listen: \"${new_port}\"|" /etc/hysteria/config.yaml; then
+    # 修改服务端配置，保持 listen 行格式
+    if sed -i "s|^listen: \":[0-9]*\"|listen: \":${new_port}\"|" /etc/hysteria/config.yaml; then
         echo "成功修改服务端的端口号"
     else
         echo "修改服务端的端口号失败"
@@ -131,19 +131,21 @@ modify_config() {
         return 1
     fi
 
-    # 修改客户端配置
-    if sed -i "s/^port: 7890$/port: 7890/" /root/hy2/config.yaml; then
-        echo "客户端端口未修改，保持为 7890"
+    # 客户端配置
+    # 确保客户端端口始终为 7890
+    if sed -i "s/^\s*port: [0-9]*$/port: 7890/" /root/hy2/config.yaml; then
+        echo "客户端端口已保持为 7890"
     fi
 
-    # 修改客户端中的代理端口和密码
-    if sed -i "s/^\s*port: [0-9]*$/port: ${new_port}/" /root/hy2/config.yaml; then
+    # 修改客户端中的代理端口为服务端新端口
+    if sed -i "s|^\s*port: [0-9]*$|port: ${new_port}|" /root/hy2/config.yaml; then
         echo "成功修改客户端的代理端口号"
     else
         echo "修改客户端的代理端口号失败"
         return 1
     fi
 
+    # 修改客户端密码
     if sed -i "s|^\s*password: .*|password: ${new_password}|" /root/hy2/config.yaml; then
         echo "成功修改客户端的密码"
     else
@@ -168,6 +170,8 @@ modify_config() {
         echo "重启服务失败"
     fi
 }
+
+
 
 # 主菜单
 show_menu() {
