@@ -259,21 +259,21 @@ else
     source $TRAFFIC_CONFIG
 fi
 
+
 # 获取当前流量
 get_traffic() {
     echo "调试: 进入 get_traffic 函数"
-    # 使用 hysteria 命令获取实时流量统计
-    local current_stats=$(hysteria stats 2>/dev/null)
-    echo "调试: hysteria stats 输出: ${current_stats}"
-    if [ $? -ne 0 ]; then
-        echo "调试: hysteria stats 命令执行失败"
+    local log_file="/var/log/hysteria/hysteria.log"
+    
+    if [ ! -f "$log_file" ]; then
+        echo "调试: 日志文件不存在"
         echo "0 0"
         return
     fi
-    
-    # 提取上传和下载流量（转换为GB）
-    local upload=$(echo "$current_stats" | grep "Upload" | awk '{print $2}' | numfmt --from=iec)
-    local download=$(echo "$current_stats" | grep "Download" | awk '{print $2}' | numfmt --from=iec)
+
+    # 从日志文件中提取最新的上传和下载流量
+    local upload=$(grep "Upload" "$log_file" | tail -n 1 | awk '{print $2}' | numfmt --from=iec)
+    local download=$(grep "Download" "$log_file" | tail -n 1 | awk '{print $2}' | numfmt --from=iec)
     
     echo "调试: 上传流量: ${upload}"
     echo "调试: 下载流量: ${download}"
@@ -296,7 +296,6 @@ get_traffic() {
     
     echo "$upload_gb $download_gb"
 }
-    
     
 # 检查流量并记录
 check_traffic() {
@@ -369,6 +368,7 @@ EOF
 }
 
 
+# 流量管理
 # 流量管理
 traffic_management() {
     while true; do
@@ -518,8 +518,6 @@ traffic_management() {
         echo
     done
 }
-
-
 # 卸载 Hysteria 2
 uninstall_hysteria() {
     print_info "卸载 Hysteria 2..."
