@@ -357,6 +357,7 @@ EOF
 }
 
 # 流量管理
+# 流量管理
 traffic_management() {
     while true; do
         echo "调试: 正在获取流量监控服务状态..."
@@ -395,6 +396,7 @@ traffic_management() {
             limit="0"
         fi
 
+        total_gb=$(echo "$up_gb + $down_gb" | bc)
         remaining_gb=$(echo "$limit - $total_gb" | bc)
         echo "调试: 流量限制: ${limit}GB, 剩余流量: ${remaining_gb}GB"
 
@@ -427,7 +429,7 @@ traffic_management() {
             1) 
                 read -p "输入流量限制 (GB): " new_limit
                 if [[ "$new_limit" =~ ^[0-9]+$ ]]; then
-                    echo "TRAFFIC_LIMIT=$new_limit" > /etc/hysteria/traffic_config
+                    sed -i "s/^TRAFFIC_LIMIT=.*/TRAFFIC_LIMIT=$new_limit/" /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量限制设置为 ${new_limit}GB${PLAIN}"
                     systemctl restart hy2-traffic-monitor.service
                 else
@@ -459,11 +461,11 @@ traffic_management() {
             5)
                 current_status=$(grep TRAFFIC_MANAGEMENT_ENABLED /etc/hysteria/traffic_config | cut -d= -f2)
                 if [ "${current_status}" == "true" ]; then
-                    echo "TRAFFIC_MANAGEMENT_ENABLED=false" > /etc/hysteria/traffic_config
+                    sed -i "s/^TRAFFIC_MANAGEMENT_ENABLED=.*/TRAFFIC_MANAGEMENT_ENABLED=false/" /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量管理已禁用${PLAIN}"
                     systemctl stop hy2-traffic-monitor.service
                 else
-                    echo "TRAFFIC_MANAGEMENT_ENABLED=true" > /etc/hysteria/traffic_config
+                    sed -i "s/^TRAFFIC_MANAGEMENT_ENABLED=.*/TRAFFIC_MANAGEMENT_ENABLED=true/" /etc/hysteria/traffic_config
                     echo -e "${GREEN}流量管理已启用${PLAIN}"
                     systemctl start hy2-traffic-monitor.service
                 fi
@@ -481,15 +483,15 @@ traffic_management() {
                 case "${reset_choice}" in
                     0) break ;;
                     1)
-                        echo "TRAFFIC_RESET_MODE=monthly" > /etc/hysteria/traffic_config
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=monthly/" /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置模式设置为每月${PLAIN}"
                         ;;
                     2)
-                        echo "TRAFFIC_RESET_MODE=30days" > /etc/hysteria/traffic_config
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=30days/" /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置模式设置为每30天${PLAIN}"
                         ;;
                     3)
-                        echo "TRAFFIC_RESET_MODE=manual" > /etc/hysteria/traffic_config
+                        sed -i "s/^TRAFFIC_RESET_MODE=.*/TRAFFIC_RESET_MODE=manual/" /etc/hysteria/traffic_config
                         echo -e "${GREEN}流量重置模式设置为手动${PLAIN}"
                         ;;
                     *) echo -e "${RED}无效的选项 ${reset_choice}${PLAIN}" ;;
