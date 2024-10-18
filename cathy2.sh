@@ -123,7 +123,7 @@ modify_config() {
         return 1
     fi
 
-    if sed -i "s/^password: .*/password: ${new_password}/" /etc/hysteria/config.yaml; then
+    if sed -i "s|^password: .*|password: ${new_password}|" /etc/hysteria/config.yaml; then
         echo "成功修改服务端的密码"
     else
         echo "修改服务端的密码失败"
@@ -138,7 +138,7 @@ modify_config() {
         return 1
     fi
 
-    if sed -i "s/^password: .*/password: ${new_password}/" /root/hy2/config.yaml; then
+    if sed -i "s|^password: .*|password: ${new_password}|" /root/hy2/config.yaml; then
         echo "成功修改客户端的密码"
     else
         echo "修改客户端的密码失败"
@@ -162,6 +162,7 @@ modify_config() {
         echo "重启服务失败"
     fi
 }
+
 
 
 
