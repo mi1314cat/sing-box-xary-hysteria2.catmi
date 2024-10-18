@@ -69,7 +69,7 @@ generate_port() {
 create_shortcut() {
     cat > /usr/local/bin/catmihy2 << 'EOF'
 #!/bin/bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2/raw/refs/heads/main/cathy2.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
 EOF
     chmod +x /usr/local/bin/catmihy2
     print_info "快捷方式 'catmihy2' 创建。使用 'catmihy2' 直接运行此脚本。"
@@ -319,10 +319,10 @@ get_traffic() {
     local download=$(echo "$current_stats" | grep "Download" | awk '{print $2}' | numfmt --from=iec)
     
     # 确保变量为数字
-    if! [[ "$upload" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    if ! [[ "$upload" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
         upload=0
     fi
-    if! [[ "$download" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    if ! [[ "$download" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
         download=0
     fi
     
@@ -424,11 +424,6 @@ traffic_management() {
         echo -e "
   ${GREEN}流量管理${PLAIN}
   ----------------------
-  流量管理服务状态: ${hy2_traffic_monitor_status_text}
-  流量限制: ${limit}GB
-  已用流量: ${total_gb}GB
-  剩余流量: ${remaining_gb}GB
-  ----------------------
   ${GREEN}1.${PLAIN} 设置流量限制
   ${GREEN}2.${PLAIN} 查看当前流量
   ${GREEN}3.${PLAIN} 查看流量日志
@@ -436,7 +431,11 @@ traffic_management() {
   ${GREEN}5.${PLAIN} 启用/禁用流量管理
   ${GREEN}6.${PLAIN} 设置流量重置模式
   ${GREEN}0.${PLAIN} 返回主菜单
-  
+  ----------------------
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已用流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
   ----------------------"
         
         read -p "输入选项 [0-6]: " choice
@@ -559,7 +558,7 @@ view_client_config() {
 # 修改端口并同步客户端配置
 modify_port() {
     read -p "输入新的端口号: " new_port
-    if! [[ "$new_port" =~ ^[0-9]+$ ]]; then
+    if ! [[ "$new_port" =~ ^[0-9]+$ ]]; then
         print_error "无效的端口号"
         return 1
     fi
@@ -591,12 +590,6 @@ show_menu() {
     
     echo -e "
   ${GREEN}Hysteria 2 管理${PLAIN}
-    ----------------------
-  Hysteria 2 服务状态: ${hysteria_server_status_text}
-  流量管理服务状态: ${hy2_traffic_monitor_status_text}
-  流量限制: ${limit}GB
-  已用流量: ${total_gb}GB
-  剩余流量: ${remaining_gb}GB
   ----------------------
   ${GREEN}1.${PLAIN} 安装 Hysteria 2
   ${GREEN}2.${PLAIN} 卸载 Hysteria 2
@@ -605,7 +598,12 @@ show_menu() {
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改端口
   ${GREEN}7.${PLAIN} 流量管理
-
+  ----------------------
+  Hysteria 2 服务状态: ${hysteria_server_status_text}
+  流量管理服务状态: ${hy2_traffic_monitor_status_text}
+  流量限制: ${limit}GB
+  已用流量: ${total_gb}GB
+  剩余流量: ${remaining_gb}GB
   ----------------------
   ${GREEN}0.${PLAIN} 退出
   ----------------------"
