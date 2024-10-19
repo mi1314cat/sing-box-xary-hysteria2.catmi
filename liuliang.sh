@@ -156,8 +156,9 @@ get_script_on_limit() {
 
 # 创建系统服务
 create_service() {
-    echo -e "${GREEN}创建系统服务...${PLAIN}"
-    cat > "$SERVICE_FILE" << 'EOF'
+    if [ ! -f "$SERVICE_FILE" ]; then
+        echo -e "${GREEN}创建系统服务...${PLAIN}"
+        cat > "$SERVICE_FILE" << 'EOF'
 [Unit]
 Description=Traffic Monitoring Service
 After=network.target
@@ -169,17 +170,24 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl daemon-reload
-    systemctl enable traffic-monitor.service
-    echo -e "${GREEN}系统服务创建并启用完成。${PLAIN}"
+        systemctl daemon-reload
+        systemctl enable traffic-monitor.service
+        echo -e "${GREEN}系统服务创建并启用完成。${PLAIN}"
+    else
+        echo -e "${GREEN}系统服务已存在，无需创建。${PLAIN}"
+    fi
 }
 
 # 创建快捷方式
 create_alias() {
-    echo -e "${GREEN}创建快捷方式...${PLAIN}"
-    echo "alias catmiliu='bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh)'" >> ~/.bashrc
-    source ~/.bashrc
-    echo -e "${GREEN}快捷方式创建完成。${PLAIN}"
+    if ! grep -q "catmiliu" ~/.bashrc; then
+        echo -e "${GREEN}创建快捷方式...${PLAIN}"
+        echo "alias catmiliu='bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh)'" >> ~/.bashrc
+        source ~/.bashrc
+        echo -e "${GREEN}快捷方式创建完成。${PLAIN}"
+    else
+        echo -e "${GREEN}快捷方式已存在，无需创建。${PLAIN}"
+    fi
 }
 
 # 卸载脚本
@@ -216,7 +224,7 @@ monitor_traffic() {
     fi
 
     # 初始化 vnstat
-    if ! vnstat -u -i eth0; then
+    if ! vnstat -i eth0; then
         echo -e "${RED}初始化 vnstat 失败。${PLAIN}"
         return 1
     fi
