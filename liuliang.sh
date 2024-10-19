@@ -1,321 +1,146 @@
 #!/bin/bash
 
-# 设置颜色
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-PLAIN='\033[0m'
+# 当前脚本文件路径
+SCRIPT_URL="https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh"
 
-# 设置文件路径
-TRAFFIC_FILE="/var/log/traffic.log"
-LIMIT_FILE="/etc/traffic_limit.conf"
-RESET_METHOD_FILE="/etc/traffic_reset_method.conf"
-CURRENT_TRAFFIC_FILE="/var/log/current_traffic.log"
-SCRIPT_ON_LIMIT_FILE="/etc/traffic_script.conf"
-SERVICE_FILE="/etc/systemd/system/traffic-monitor.service"
-SCRIPT_PATH="/usr/local/bin/traffic-monitor.sh"
-CONFIG_FILE="/etc/traffic_monitor.conf"
+# 当前路径
+CURRENT_DIR=$(pwd)
 
-# 初始化文件
-initialize_files() {
-    if [ ! -f "$LIMIT_FILE" ]; then
-        echo -e "${GREEN}初始化文件...${PLAIN}"
-        touch "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE" "$CONFIG_FILE"
-        echo "500000" > "$LIMIT_FILE"  # 默认限制：500GB
-        echo "3" > "$RESET_METHOD_FILE"  # 默认重置方法：3（从不）
-        echo "" > "$SCRIPT_ON_LIMIT_FILE"  # 默认脚本：无
-        echo "script_on_limit=" > "$CONFIG_FILE"  # 默认配置：无
-        echo -e "${GREEN}文件初始化完成。${PLAIN}"
-    else
-        echo -e "${GREEN}文件已存在，无需初始化。${PLAIN}"
-    fi
+# 脚本文件名
+SCRIPT_FILE="liuliang.sh"
+chmod +x ~/liuliang.sh
+ln -s ~/liuliang.sh ~/liu
+
+# 配置文件路径
+CONFIG_FILE=~/traffic_monitor.conf
+
+# 默认阈值（GB）
+DEFAULT_RX_THRESHOLD=95
+DEFAULT_TX_THRESHOLD=95
+
+# 默认流量重置日期（每月1日）
+DEFAULT_CZ_DAY=1
+
+# 默认执行指令
+DEFAULT_COMMAND="shutdown -h now"
+
+# 确保脚本文件在当前路径中
+if [ ! -f "$CURRENT_DIR/$SCRIPT_FILE" ]; then
+  curl -fsSL "$SCRIPT_URL" -o "$CURRENT_DIR/$SCRIPT_FILE"
+  chmod +x "$CURRENT_DIR/$SCRIPT_FILE"
+  echo "脚本已保存到当前路径: $CURRENT_DIR/$SCRIPT_FILE"
+fi
+
+# 读取配置文件中的阈值
+read_config() {
+  if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+  else
+    echo "rx_threshold_gb=$DEFAULT_RX_THRESHOLD" > "$CONFIG_FILE"
+    echo "tx_threshold_gb=$DEFAULT_TX_THRESHOLD" > "$CONFIG_FILE"
+    echo "cz_day=$DEFAULT_CZ_DAY" >> "$CONFIG_FILE"
+    echo "command=\"$DEFAULT_COMMAND\"" >> "$CONFIG_FILE"
+  fi
 }
 
-# 设置流量重置方法
-set_reset_method() {
-    echo -e "${GREEN}流量重置方法${PLAIN}
-  ----------------------
-  ${GREEN}1.${PLAIN} 每月第一天
-  ${GREEN}2.${PLAIN} 每30天
-  ${GREEN}3.${PLAIN} 从不
-  ${GREEN}0.${PLAIN} 返回"
-    read -p "选择重置方法: " method
-    case $method in
-        1) echo "1" > "$RESET_METHOD_FILE" ;;
-        2) echo "2" > "$RESET_METHOD_FILE" ;;
-        3) echo "3" > "$RESET_METHOD_FILE" ;;
-        0) return ;;
-        *) echo "无效的选择" ;;
-    esac
-    # 更新cron任务
-    update_cron_job
+# 写入配置文件
+write_config() {
+  echo "rx_threshold_gb=$rx_threshold_gb" > "$CONFIG_FILE"
+  echo "tx_threshold_gb=$tx_threshold_gb" > "$CONFIG_FILE"
+  echo "cz_day=$cz_day" >> "$CONFIG_FILE"
+  echo "command=\"$command\"" >> "$CONFIG_FILE"
 }
 
-# 更新cron任务
-update_cron_job() {
-    reset_method=$(cat "$RESET_METHOD_FILE")
-    crontab -l > /tmp/crontab.bak
-    if [ "$reset_method" -eq 1 ]; then
-        # 每月第一天重置流量
-        echo "0 0 1 * * /bin/bash $SCRIPT_PATH reset_traffic" >> /tmp/crontab.bak
-    elif [ "$reset_method" -eq 2 ]; then
-        # 每30天重置流量
-        echo "0 0 * * * /bin/bash $SCRIPT_PATH reset_traffic" >> /tmp/crontab.bak
-    else
-        # 从不重置流量
-        sed -i '/reset_traffic/d' /tmp/crontab.bak
-    fi
-    crontab /tmp/crontab.bak
-    rm /tmp/crontab.bak
-    echo -e "${GREEN}Cron任务已更新。${PLAIN}"
+# 获取当前流量
+get_traffic() {
+  rx_bytes=$(cat /sys/class/net/eth0/statistics/rx_bytes)
+  tx_bytes=$(cat /sys/class/net/eth0/statistics/tx_bytes)
+  echo $((rx_bytes / 1024 / 1024 / 1024)) > ~/current_rx_gb.txt
+  echo $((tx_bytes / 1024 / 1024 / 1024)) > ~/current_tx_gb.txt
 }
 
-# 重置流量
-reset_traffic() {
-    echo "0" > "$CURRENT_TRAFFIC_FILE"
-    echo -e "${GREEN}流量已重置。${PLAIN}"
+# 检查流量是否达到阈值
+check_traffic() {
+  current_rx_gb=$(cat ~/current_rx_gb.txt)
+  current_tx_gb=$(cat ~/current_tx_gb.txt)
+  if [ "$current_rx_gb" -ge "$rx_threshold_gb" ] || [ "$current_tx_gb" -ge "$tx_threshold_gb" ]; then
+    echo "流量达到阈值，执行指定指令"
+    execute_command
+  fi
 }
 
-# 检查流量限制
-check_traffic_limit() {
-    limit=$(cat "$LIMIT_FILE")
-    current_traffic=$(cat "$CURRENT_TRAFFIC_FILE")
-    if [ "$current_traffic" -ge "$limit" ]; then
-        echo -e "${GREEN}流量限制已达到，执行脚本...${PLAIN}"
-        script_path=$(cat "$SCRIPT_ON_LIMIT_FILE")
-        if [ -n "$script_path" ]; then
-            bash "$script_path"
-        fi
-    fi
-}
-
-# 设置流量限制
-set_traffic_limit() {
-    read -p "输入新的流量限制 (例如 500): " new_limit
-    echo "$((new_limit * 1000))" > "$LIMIT_FILE"
-    echo -e "${GREEN}流量限制已设置为: ${new_limit}GB${PLAIN}"
-}
-
-# 设置流量达到限制时执行的脚本
-set_script_on_limit() {
-    read -p "输入流量达到限制时要执行的脚本命令: " script_path
-    echo "$script_path" > "$SCRIPT_ON_LIMIT_FILE"
-    sed -i "s|^script_on_limit=.*|script_on_limit=$script_path|" "$CONFIG_FILE"
-    echo -e "${GREEN}已设置脚本: $script_path${PLAIN}"
-}
-
-# 获取流量管理服务状态
-get_service_status() {
-    if systemctl is-active --quiet traffic-monitor.service; then
-        echo "${GREEN}已启动${PLAIN}"
-    else
-        echo "${YELLOW}未启动${PLAIN}"
-    fi
-}
-
-# 获取流量限制
-get_traffic_limit() {
-    limit=$(cat "$LIMIT_FILE")
-    if [ "$limit" -lt 1000 ]; then
-        echo "$limit MB"
-    else
-        echo "$((limit / 1000)) GB"
-    fi
-}
-
-# 获取已使用的流量
-get_current_traffic() {
-    current_traffic=$(cat "$CURRENT_TRAFFIC_FILE")
-    if [ "$current_traffic" -lt 1000 ]; then
-        echo "$current_traffic MB"
-    else
-        echo "$((current_traffic / 1000)) GB"
-    fi
-}
-
-# 获取剩余流量
-get_remaining_traffic() {
-    limit=$(cat "$LIMIT_FILE")
-    current_traffic=$(cat "$CURRENT_TRAFFIC_FILE")
-    remaining=$((limit - current_traffic))
-    if [ "$remaining" -lt 1000 ]; then
-        echo "$remaining MB"
-    else
-        echo "$((remaining / 1000)) GB"
-    fi
-}
-
-# 获取流量达到限制时执行的脚本
-get_script_on_limit() {
-    script_path=$(cat "$SCRIPT_ON_LIMIT_FILE")
-    if [ -n "$script_path" ]; then
-        echo "$script_path"
-    else
-        echo "无"
-    fi
-}
-
-# 创建系统服务
-create_service() {
-    if [ ! -f "$SERVICE_FILE" ]; then
-        echo -e "${GREEN}创建系统服务...${PLAIN}"
-        cat > "$SERVICE_FILE" << 'EOF'
-[Unit]
-Description=Traffic Monitoring Service
-After=network.target
-
-[Service]
-ExecStart=/bin/bash /usr/local/bin/traffic-monitor.sh check_traffic_limit
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-        systemctl daemon-reload
-        systemctl enable traffic-monitor.service
-        echo -e "${GREEN}系统服务创建并启用完成。${PLAIN}"
-    else
-        echo -e "${GREEN}系统服务已存在，无需创建。${PLAIN}"
-    fi
-}
-
-# 创建快捷方式
-create_alias() {
-    if ! grep -q "catmiliu" ~/.bashrc; then
-        echo -e "${GREEN}创建快捷方式...${PLAIN}"
-        echo "alias catmiliu='bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh)'" >> ~/.bashrc
-        source ~/.bashrc
-        echo -e "${GREEN}快捷方式创建完成。${PLAIN}"
-    else
-        echo -e "${GREEN}快捷方式已存在，无需创建。${PLAIN}"
-    fi
-}
-
-# 卸载脚本
-uninstall_script() {
-    echo -e "${GREEN}卸载脚本...${PLAIN}"
-    # 停止并禁用服务
-    systemctl stop traffic-monitor.service
-    systemctl disable traffic-monitor.service
-    rm -f "$SERVICE_FILE"
-
-    # 删除cron任务
-    crontab -l > /tmp/crontab.bak
-    sed -i '/reset_traffic/d' /tmp/crontab.bak
-    crontab /tmp/crontab.bak
-    rm /tmp/crontab.bak
-
-    # 删除文件
-    rm -f "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE" "$CONFIG_FILE"
-
-    # 删除快捷方式
-    sed -i '/catmiliu/d' ~/.bashrc
-    source ~/.bashrc
-
-    echo -e "${GREEN}脚本已卸载。${PLAIN}"
-}
-
-# 监控流量
-monitor_traffic() {
-    # 确保安装了 vnstat
-    if ! command -v vnstat &> /dev/null; then
-        echo -e "${GREEN}安装 vnstat...${PLAIN}"
-        sudo apt-get update
-        sudo apt-get install -y vnstat
-    fi
-
-    # 初始化 vnstat
-    if ! vnstat -i eth0; then
-        echo -e "${RED}初始化 vnstat 失败。${PLAIN}"
-        return 1
-    fi
-
-    # 获取当前流量
-    current_traffic=$(vnstat -i eth0 --oneline | awk -F';' '{print $5}' | sed 's/ MiB//')
-    echo "$((current_traffic * 1024))" > "$CURRENT_TRAFFIC_FILE"
-    echo -e "${GREEN}流量监控完成。${PLAIN}"
+# 执行指定指令
+execute_command() {
+  echo "执行指令: $command"
+  eval "$command"
 }
 
 # 主菜单
 main_menu() {
-    echo -e "${GREEN}流量管理脚本${PLAIN}
-  ----------------------
-  流量管理服务状态: $(get_service_status)
-  流量限制: $(get_traffic_limit)
-  已使用的流量: $(get_current_traffic)
-  剩余流量: $(get_remaining_traffic)
-  流量达到限制执行: $(get_script_on_limit)
-  ----------------------
-  ${GREEN}1.${PLAIN} 初始化文件
-  ${GREEN}2.${PLAIN} 设置流量限制
-  ${GREEN}3.${PLAIN} 设置流量重置方法
-  ${GREEN}4.${PLAIN} 设置流量达到限制时执行的脚本
-  ${GREEN}5.${PLAIN} 检查流量限制
-  ${GREEN}6.${PLAIN} 启动流量管理服务
-  ${GREEN}7.${PLAIN} 停止流量管理服务
-  ${GREEN}8.${PLAIN} 重启流量管理服务
-  ${GREEN}9.${PLAIN} 手动重置流量
-  ${GREEN}10.${PLAIN} 卸载脚本
-  ${GREEN}0.${PLAIN} 退出"
-    read -p "选择操作: " choice
-    case $choice in
-        1) initialize_files ;;
-        2) set_traffic_limit ;;
-        3) set_reset_method ;;
-        4) set_script_on_limit ;;
-        5) check_traffic_limit ;;
-        6) 
-            echo -e "${GREEN}启动流量管理服务...${PLAIN}"
-            systemctl start traffic-monitor.service
-            if systemctl is-active --quiet traffic-monitor.service; then
-                echo -e "${GREEN}流量管理服务已启动。${PLAIN}"
-            else
-                echo -e "${RED}启动流量管理服务失败。${PLAIN}"
-                journalctl -u traffic-monitor.service -n 10
-            fi
-            ;;
-        7) 
-            echo -e "${GREEN}停止流量管理服务...${PLAIN}"
-            systemctl stop traffic-monitor.service
-            if systemctl is-active --quiet traffic-monitor.service; then
-                echo -e "${RED}停止流量管理服务失败。${PLAIN}"
-            else
-                echo -e "${GREEN}流量管理服务已停止。${PLAIN}"
-            fi
-            ;;
-        8) 
-            echo -e "${GREEN}重启流量管理服务...${PLAIN}"
-            systemctl restart traffic-monitor.service
-            if systemctl is-active --quiet traffic-monitor.service; then
-                echo -e "${GREEN}流量管理服务已重启。${PLAIN}"
-            else
-                echo -e "${RED}重启流量管理服务失败。${PLAIN}"
-                journalctl -u traffic-monitor.service -n 10
-            fi
-            ;;
-        9) reset_traffic ;;
-        10) uninstall_script ;;
-        0) exit ;;
-        *) echo "无效的选择" ;;
+  while true; do
+    clear
+    echo "流量监控和指令执行功能"
+    echo "------------------------------------------------"
+    echo "当前流量使用情况，重启服务器流量计算会清零！"
+    get_traffic
+    echo "当前进站流量: $(cat ~/current_rx_gb.txt) GB"
+    echo "当前出站流量: $(cat ~/current_tx_gb.txt) GB"
+    echo "------------------------------------------------"
+    read_config
+    echo "当前设置的进站限流阈值为: $rx_threshold_gb GB"
+    echo "当前设置的出站限流阈值为: $tx_threshold_gb GB"
+    echo "当前流量重置日期: $cz_day"
+    echo "当前执行指令: $command"
+    echo "------------------------------------------------"
+    echo "系统每分钟会检测实际流量是否到达阈值，到达后会自动执行指定指令！"
+    read -e -p "1. 设置限流阈值    2. 设置执行指令    3. 启用流量监控    4. 停用流量监控    0. 退出  : " choice
+
+    case "$choice" in
+      1)
+        read -e -p "请输入进站流量阈值（单位为GB）: " rx_threshold_gb
+        read -e -p "请输入出站流量阈值（单位为GB）: " tx_threshold_gb
+        read -e -p "请输入流量重置日期（默认每月1日重置）: " cz_day
+        cz_day=${cz_day:-1}
+        write_config
+        setup_cron
+        echo "限流阈值已设置"
+        ;;
+      2)
+        read -e -p "请输入要执行的指令: " command
+        write_config
+        echo "执行指令已设置"
+        ;;
+      3)
+        setup_cron
+        echo "已启用流量监控功能"
+        ;;
+      4)
+        remove_cron
+        echo "已关闭流量监控功能"
+        ;;
+      0)
+        break
+        ;;
+      *)
+        echo "无效的选择，请重新输入。"
+        ;;
     esac
+  done
 }
 
-# 确保脚本路径正确并具有可执行权限
-if [ ! -f "$SCRIPT_PATH" ]; then
-    echo -e "${GREEN}下载并复制脚本到 /usr/local/bin...${PLAIN}"
-    sudo curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh -o "$SCRIPT_PATH"
-    sudo chmod +x "$SCRIPT_PATH"
-    echo -e "${GREEN}脚本已下载并设置可执行权限。${PLAIN}"
-fi
+# 设置定时任务
+setup_cron() {
+  (crontab -l ; echo "* * * * * $CURRENT_DIR/$SCRIPT_FILE check") | crontab -
+  (crontab -l ; echo "0 1 $cz_day * * reboot") | crontab -
+  echo "定时任务已设置"
+}
 
-# 自动执行初始化和创建系统服务
-initialize_files
-create_service
-create_alias
+# 移除定时任务
+remove_cron() {
+  crontab -l | grep -v "$CURRENT_DIR/$SCRIPT_FILE check" | crontab -
+  crontab -l | grep -v "reboot" | crontab -
+  echo "定时任务已移除"
+}
 
-# 监控流量
-monitor_traffic
-
-# 主循环
-while true; do
-    main_menu
-done
+# 主程序入口
+main_menu
