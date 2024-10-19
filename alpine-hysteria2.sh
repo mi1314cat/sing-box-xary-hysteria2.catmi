@@ -107,12 +107,23 @@ depend() {
 EOF
 }
 
+# 获取系统架构
+ARCH=$(uname -m)
+
 # 下载 Hysteria
-wget -O /usr/local/bin/hysteria https://download.hysteria.network/app/latest/hysteria-linux-arm64 --no-check-certificate
+if [ "$ARCH" = "aarch64" ]; then
+  wget -O /usr/local/bin/hysteria https://download.hysteria.network/app/latest/hysteria-linux-arm64 --no-check-certificate
+else
+  wget -O /usr/local/bin/hysteria https://download.hysteria.network/app/latest/hysteria-linux-amd64 --no-check-certificate
+fi
+
+# 检查下载是否成功
 if [ $? -ne 0 ]; then
   echo "下载 Hysteria 失败"
   exit 1
 fi
+
+# 确保文件有执行权限
 chmod +x /usr/local/bin/hysteria
 
 # 创建 Hysteria 配置目录
