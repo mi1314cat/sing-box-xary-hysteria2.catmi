@@ -222,9 +222,35 @@ main_menu() {
         3) set_reset_method ;;
         4) set_script_on_limit ;;
         5) check_traffic_limit ;;
-        6) systemctl start traffic-monitor.service && echo -e "${GREEN}流量管理服务已启动。${PLAIN}" || echo -e "${RED}启动流量管理服务失败。${PLAIN}" ;;
-        7) systemctl stop traffic-monitor.service && echo -e "${GREEN}流量管理服务已停止。${PLAIN}" || echo -e "${RED}停止流量管理服务失败。${PLAIN}" ;;
-        8) systemctl restart traffic-monitor.service && echo -e "${GREEN}流量管理服务已重启。${PLAIN}" || echo -e "${RED}重启流量管理服务失败。${PLAIN}" ;;
+        6) 
+            echo -e "${GREEN}启动流量管理服务...${PLAIN}"
+            systemctl start traffic-monitor.service
+            if systemctl is-active --quiet traffic-monitor.service; then
+                echo -e "${GREEN}流量管理服务已启动。${PLAIN}"
+            else
+                echo -e "${RED}启动流量管理服务失败。${PLAIN}"
+                journalctl -u traffic-monitor.service -n 10
+            fi
+            ;;
+        7) 
+            echo -e "${GREEN}停止流量管理服务...${PLAIN}"
+            systemctl stop traffic-monitor.service
+            if systemctl is-active --quiet traffic-monitor.service; then
+                echo -e "${RED}停止流量管理服务失败。${PLAIN}"
+            else
+                echo -e "${GREEN}流量管理服务已停止。${PLAIN}"
+            fi
+            ;;
+        8) 
+            echo -e "${GREEN}重启流量管理服务...${PLAIN}"
+            systemctl restart traffic-monitor.service
+            if systemctl is-active --quiet traffic-monitor.service; then
+                echo -e "${GREEN}流量管理服务已重启。${PLAIN}"
+            else
+                echo -e "${RED}重启流量管理服务失败。${PLAIN}"
+                journalctl -u traffic-monitor.service -n 10
+            fi
+            ;;
         9) reset_traffic ;;
         10) uninstall_script ;;
         0) exit ;;
