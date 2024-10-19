@@ -64,8 +64,112 @@ EOF
     chmod +x /usr/local/bin/catmihy2
     print_info "快捷方式 'catmihy2' 已创建，可使用 'catmihy2' 命令运行脚本"
 }
+  # 安装 Hysteria 2
+  install_hysteria() {
+    print_info "开始安装 Hysteria 2..."
 
+    # 安装依赖
+    bash <(curl -fsSL https://get.hy2.sh/)
+ 
+    # 生成自签证书
+    
+    openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
+    -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
+    -subj "/CN=bing.com" -days 36500 && \
+    sudo chown hysteria /etc/hysteria/server.key && \
+    sudo chown hysteria /etc/hysteria/server.crt
 
+    # 生成随机密码
+    AUTH_PASSWORD=$(openssl rand -base64 16)
+
+    # 提示输入监听端口号
+    PORT=$(generate_port "Hysteria")
+
+    # 获取公网 IP 地址
+    PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
+    PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
+    echo "公网 IPv4 地址: $PUBLIC_IP_V4"
+    echo "公网 IPv6 地址: $PUBLIC_IP_V6"
+
+    # 选择使用哪个公网 IP 地址
+    echo "请选择要使用的公网 IP 地址:"
+    echo "1. $PUBLIC_IP_V4 (默认)"
+    echo "2. $PUBLIC_IP_V6"
+    echo "3. 自定义 IP"
+    read -p "请输入对应的数字选择: " IP_CHOICE
+
+    case "$IP_CHOICE" in
+        1)
+            PUBLIC_IP=$PUBLIC_IP_V4
+            ;;
+        2)
+            PUBLIC_IP=$PUBLIC_IP_V6
+            ;;
+        3)
+            read -p "请输入自定义的公网 IP 地址: " PUBLIC_IP
+            ;;
+        *)
+            PUBLIC_IP=$PUBLIC_IP_V4
+            ;;
+    esac
+
+    # 创建服务端配置
+    create_server_config
+
+    # 创建客户端配置
+    create_client_config
+
+    # 启动服务
+    systemctl enable --now hysteria-server.service
+
+    print_info "Hysteria 2 安装完成！"
+    print_info "服务器地址：${PUBLIC_IP}"
+    print_info "端口：${PORT}"
+    print_info "密码：${AUTH_PASSWORD}"
+    print_info "配置文件已保存到：/root/hy2/config.yaml"
+}
+
+# 创建服务端配置
+create_server_config() {
+   cat << EOF > /etc/hysteria/config.yaml
+listen: ":$PORT"
+
+tls:
+  cert: /etc/hysteria/server.crt
+  key: /etc/hysteria/server.key
+
+auth:
+  type: password
+  password: $AUTH_PASSWORD
+  
+masquerade:
+  type: proxy
+  proxy:
+    url: https://bing.com
+    rewriteHost: true
+EOF
+
+}
+
+# 创建客户端配置
+create_client_config() {
+    mkdir -p /root/hy2
+    cat << EOF > /root/hy2/config.yaml
+
+  - name: Hy2-Hysteria2
+    server: $PUBLIC_IP
+    port: $PORT
+    type: hysteria2
+    up: "45 Mbps"
+    down: "150 Mbps"
+    sni: bing.com
+    password: $AUTH_PASSWORD
+    skip-cert-verify: true
+    alpn:
+      - h3
+
+EOF
+}
 
 # 卸载 Hysteria 2
 uninstall_hysteria() {
@@ -198,7 +302,7 @@ show_menu() {
     
     case "${choice}" in
         0) exit 0 ;;
-        1) bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh) ;;
+        1) install_hysteria ;;
         2) uninstall_hysteria ;;
         3) update_hysteria ;;
         4) systemctl restart hysteria-server.service ;;
