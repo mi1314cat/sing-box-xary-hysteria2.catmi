@@ -17,21 +17,17 @@ CONFIG_FILE="/etc/traffic_monitor.conf"
 
 # 初始化文件
 initialize_files() {
-    echo -e "${GREEN}初始化文件...${PLAIN}"
-    touch "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE" "$CONFIG_FILE"
-    if [ ! -s "$LIMIT_FILE" ]; then
+    if [ ! -f "$LIMIT_FILE" ]; then
+        echo -e "${GREEN}初始化文件...${PLAIN}"
+        touch "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE" "$CONFIG_FILE"
         echo "500000" > "$LIMIT_FILE"  # 默认限制：500GB
-    fi
-    if [ ! -s "$RESET_METHOD_FILE" ]; then
         echo "3" > "$RESET_METHOD_FILE"  # 默认重置方法：3（从不）
-    fi
-    if [ ! -s "$SCRIPT_ON_LIMIT_FILE" ]; then
         echo "" > "$SCRIPT_ON_LIMIT_FILE"  # 默认脚本：无
-    fi
-    if [ ! -s "$CONFIG_FILE" ]; then
         echo "script_on_limit=" > "$CONFIG_FILE"  # 默认配置：无
+        echo -e "${GREEN}文件初始化完成。${PLAIN}"
+    else
+        echo -e "${GREEN}文件已存在，无需初始化。${PLAIN}"
     fi
-    echo -e "${GREEN}文件初始化完成。${PLAIN}"
 }
 
 # 设置流量重置方法
@@ -210,6 +206,27 @@ uninstall_script() {
     echo -e "${GREEN}脚本已卸载。${PLAIN}"
 }
 
+# 监控流量
+monitor_traffic() {
+    # 确保安装了 vnstat
+    if ! command -v vnstat &> /dev/null; then
+        echo -e "${GREEN}安装 vnstat...${PLAIN}"
+        sudo apt-get update
+        sudo apt-get install -y vnstat
+    fi
+
+    # 初始化 vnstat
+    if ! vnstat -u -i eth0; then
+        echo -e "${RED}初始化 vnstat 失败。${PLAIN}"
+        return 1
+    fi
+
+    # 获取当前流量
+    current_traffic=$(vnstat -i eth0 --oneline | awk -F';' '{print $5}' | sed 's/ MiB//')
+    echo "$((current_traffic * 1024))" > "$CURRENT_TRAFFIC_FILE"
+    echo -e "${GREEN}流量监控完成。${PLAIN}"
+}
+
 # 主菜单
 main_menu() {
     echo -e "${GREEN}流量管理脚本${PLAIN}
@@ -286,6 +303,9 @@ fi
 initialize_files
 create_service
 create_alias
+
+# 监控流量
+monitor_traffic
 
 # 主循环
 while true; do
