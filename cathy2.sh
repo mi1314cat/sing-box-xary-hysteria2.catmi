@@ -178,6 +178,8 @@ uninstall_hysteria() {
     systemctl disable hysteria-server.service
     rm -rf /etc/hysteria
     rm -rf /root/hy2
+    rm -rf /etc/hysteria/server.crt
+    rm -rf /etc/hysteria/server.key
     rm -f /usr/local/bin/catmihy2
     systemctl daemon-reload
     print_info "Hysteria 2 已成功卸载"
