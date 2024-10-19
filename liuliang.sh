@@ -8,8 +8,6 @@ CURRENT_DIR=$(pwd)
 
 # 脚本文件名
 SCRIPT_FILE="liuliang.sh"
-chmod +x ~/liuliang.sh
-ln -s ~/liuliang.sh ~/liu
 
 # 配置文件路径
 CONFIG_FILE=~/traffic_monitor.conf
@@ -24,12 +22,16 @@ DEFAULT_CZ_DAY=1
 # 默认执行指令
 DEFAULT_COMMAND="shutdown -h now"
 
-# 确保脚本文件在当前路径中
-if [ ! -f "$CURRENT_DIR/$SCRIPT_FILE" ]; then
-  curl -fsSL "$SCRIPT_URL" -o "$CURRENT_DIR/$SCRIPT_FILE"
-  chmod +x "$CURRENT_DIR/$SCRIPT_FILE"
-  echo "脚本已保存到当前路径: $CURRENT_DIR/$SCRIPT_FILE"
+# 确保脚本文件存在并下载
+if [ ! -f "$HOME/$SCRIPT_FILE" ]; then
+  curl -fsSL "$SCRIPT_URL" -o "$HOME/$SCRIPT_FILE"
+  echo "脚本已下载到 $HOME/$SCRIPT_FILE"
 fi
+
+# 设置脚本为可执行
+chmod +x "$HOME/$SCRIPT_FILE"
+# 创建快捷方式
+ln -s "$HOME/$SCRIPT_FILE" "$HOME/liu"
 
 # 读取配置文件中的阈值
 read_config() {
@@ -37,7 +39,7 @@ read_config() {
     source "$CONFIG_FILE"
   else
     echo "rx_threshold_gb=$DEFAULT_RX_THRESHOLD" > "$CONFIG_FILE"
-    echo "tx_threshold_gb=$DEFAULT_TX_THRESHOLD" > "$CONFIG_FILE"
+    echo "tx_threshold_gb=$DEFAULT_TX_THRESHOLD" >> "$CONFIG_FILE"
     echo "cz_day=$DEFAULT_CZ_DAY" >> "$CONFIG_FILE"
     echo "command=\"$DEFAULT_COMMAND\"" >> "$CONFIG_FILE"
   fi
@@ -53,7 +55,6 @@ write_config() {
 
 # 获取当前流量
 get_traffic() {
-  # 获取第一个非本地网络接口
   interface=$(ls /sys/class/net | grep -v lo | head -n 1)
 
   if [ -z "$interface" ]; then
@@ -61,7 +62,6 @@ get_traffic() {
     exit 1
   fi
 
-  # 获取接收和发送的字节数
   rx_bytes=$(cat /sys/class/net/$interface/statistics/rx_bytes)
   tx_bytes=$(cat /sys/class/net/$interface/statistics/tx_bytes)
 
