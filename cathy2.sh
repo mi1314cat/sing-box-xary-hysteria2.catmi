@@ -300,7 +300,7 @@ show_menu() {
     read -p "请输入选项 [0-6]: " choice
     
     case "${choice}" in
-        0) exit 0 ;;
+        0) clear;exit 0 ;;
         1) install_hysteria ;;
         2) uninstall_hysteria ;;
         3) update_hysteria ;;
