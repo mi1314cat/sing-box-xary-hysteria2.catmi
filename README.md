@@ -10,15 +10,6 @@
 
 ## hysteria2内核
 
-alpine-hysteria2
-一键安装
- ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/alpine-hysteria2.sh)
-```
-一键卸载
-```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/uninstall_alpine-hysteria2.sh)
-```
 ### Debian ubuntu ....
  hysteria2 带面板脚本
 ```bash
@@ -28,6 +19,18 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh)
 ```
+
+###alpine-hysteria2
+
+一键安装
+ ```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/alpine-hysteria2.sh)
+```
+一键卸载
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/uninstall_alpine-hysteria2.sh)
+```
+
 ## sing-box内核
 ### reality hysteria2二合一脚本
 
