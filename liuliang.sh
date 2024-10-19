@@ -53,8 +53,18 @@ write_config() {
 
 # 获取当前流量
 get_traffic() {
-  rx_bytes=$(cat /sys/class/net/eth0/statistics/rx_bytes)
-  tx_bytes=$(cat /sys/class/net/eth0/statistics/tx_bytes)
+  # 获取第一个非本地网络接口
+  interface=$(ls /sys/class/net | grep -v lo | head -n 1)
+
+  if [ -z "$interface" ]; then
+    echo "未找到有效的网络接口！"
+    exit 1
+  fi
+
+  # 获取接收和发送的字节数
+  rx_bytes=$(cat /sys/class/net/$interface/statistics/rx_bytes)
+  tx_bytes=$(cat /sys/class/net/$interface/statistics/tx_bytes)
+
   echo $((rx_bytes / 1024 / 1024 / 1024)) > ~/current_rx_gb.txt
   echo $((tx_bytes / 1024 / 1024 / 1024)) > ~/current_tx_gb.txt
 }
