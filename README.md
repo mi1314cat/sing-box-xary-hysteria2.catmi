@@ -56,7 +56,7 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/main/brutal-reality-hysteria.sh)
 ```
 
-##xary内核
+## xary内核
 
 ### xary  vmess+ws or socks 脚本
 ```bash
