@@ -237,12 +237,12 @@ modify_config() {
 
     # 客户端配置
     # 确保客户端端口始终为 7890
-    if sed -i "s/^\s*port: [0-9]*$/port: 7890/" /root/hy2/config.yaml; then
+    if sed -i "s/^\s*port: [0-9]*$/    port: 7890/" /root/hy2/config.yaml; then
         echo "客户端端口已保持为 7890"
     fi
 
     # 修改客户端中的代理端口为服务端新端口
-    if sed -i "s|^\s*port: [0-9]*$|port: ${new_port}|" /root/hy2/config.yaml; then
+    if sed -i "s|^\s*port: [0-9]*$|    port: ${new_port}|" /root/hy2/config.yaml; then
         echo "成功修改客户端的代理端口号"
     else
         echo "修改客户端的代理端口号失败"
@@ -250,7 +250,7 @@ modify_config() {
     fi
 
     # 修改客户端密码
-    if sed -i "s|^\s*password: .*|password: ${new_password}|" /root/hy2/config.yaml; then
+    if sed -i "s|^\s*password: .*|    password: ${new_password}|" /root/hy2/config.yaml; then
         echo "成功修改客户端的密码"
     else
         echo "修改客户端的密码失败"
@@ -274,7 +274,6 @@ modify_config() {
         echo "重启服务失败"
     fi
 }
-
 
 
 # 主菜单
