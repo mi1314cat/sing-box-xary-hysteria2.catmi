@@ -232,18 +232,18 @@ main_menu() {
     esac
 }
 
+# 确保脚本路径正确并具有可执行权限
+if [ ! -f "$SCRIPT_PATH" ]; then
+    echo -e "${GREEN}下载并复制脚本到 /usr/local/bin...${PLAIN}"
+    sudo curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh -o "$SCRIPT_PATH"
+    sudo chmod +x "$SCRIPT_PATH"
+    echo -e "${GREEN}脚本已下载并设置可执行权限。${PLAIN}"
+fi
+
 # 自动执行初始化和创建系统服务
 initialize_files
 create_service
 create_alias
-
-# 确保脚本路径正确并具有可执行权限
-if [ ! -f "$SCRIPT_PATH" ]; then
-    echo -e "${GREEN}复制脚本到 /usr/local/bin...${PLAIN}"
-    sudo cp "$0" "$SCRIPT_PATH"
-    sudo chmod +x "$SCRIPT_PATH"
-    echo -e "${GREEN}脚本已复制并设置可执行权限。${PLAIN}"
-fi
 
 # 主循环
 while true; do
