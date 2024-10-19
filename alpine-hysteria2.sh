@@ -178,16 +178,15 @@ fi
 
 # 显示客户端配置文件内容
 echo "客户端配置文件内容:"
-
 cat /root/hy2/config.yaml
 
 echo "------------------------------------------------------------------------"
-echo "hysteria2已经安装完成"
+echo "Hysteria2 已经安装完成"
 echo "默认端口： $LISTEN_PORT ， 密码为： $GENPASS ，工具中配置：tls，SNI为： bing.com"
 echo "配置文件：/etc/hysteria/config.yaml"
 echo "已经随系统自动启动"
-echo "看状态 service hysteria status"
-echo "重启 service hysteria restart"
+echo "查看状态： service hysteria status"
+echo "重启服务： service hysteria restart"
 echo "请享用。"
 echo "------------------------------------------------------------------------"
 
