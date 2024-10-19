@@ -163,6 +163,29 @@ create_alias() {
     source ~/.bashrc
 }
 
+# 卸载脚本
+uninstall_script() {
+    # 停止并禁用服务
+    systemctl stop traffic-monitor.service
+    systemctl disable traffic-monitor.service
+    rm -f "$SERVICE_FILE"
+
+    # 删除cron任务
+    crontab -l > /tmp/crontab.bak
+    sed -i '/reset_traffic/d' /tmp/crontab.bak
+    crontab /tmp/crontab.bak
+    rm /tmp/crontab.bak
+
+    # 删除文件
+    rm -f "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE"
+
+    # 删除快捷方式
+    sed -i '/catmiliu/d' ~/.bashrc
+    source ~/.bashrc
+
+    echo "脚本已卸载"
+}
+
 # 主菜单
 main_menu() {
     echo -e "${GREEN}流量管理脚本${PLAIN}
@@ -180,6 +203,8 @@ main_menu() {
   ${GREEN}6.${PLAIN} 启动流量管理服务
   ${GREEN}7.${PLAIN} 停止流量管理服务
   ${GREEN}8.${PLAIN} 重启流量管理服务
+  ${GREEN}9.${PLAIN} 手动重置流量
+  ${GREEN}10.${PLAIN} 卸载脚本
   ${GREEN}0.${PLAIN} 退出"
     read -p "选择操作: " choice
     case $choice in
@@ -191,6 +216,8 @@ main_menu() {
         6) systemctl start traffic-monitor.service ;;
         7) systemctl stop traffic-monitor.service ;;
         8) systemctl restart traffic-monitor.service ;;
+        9) reset_traffic ;;
+        10) uninstall_script ;;
         0) exit ;;
         *) echo "无效的选择" ;;
     esac
