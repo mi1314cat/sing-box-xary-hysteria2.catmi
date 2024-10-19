@@ -69,6 +69,27 @@ get_traffic() {
   echo $((tx_bytes / 1024 / 1024 / 1024)) > ~/current_tx_gb.txt
 }
 
+# 输出当前总接收和发送的流量信息
+output_status() {
+  output=$(awk 'BEGIN { rx_total = 0; tx_total = 0 }
+    NR > 2 { rx_total += $2; tx_total += $10 }
+    END {
+      rx_units = "Bytes";
+      tx_units = "Bytes";
+      if (rx_total > 1024) { rx_total /= 1024; rx_units = "KB"; }
+      if (rx_total > 1024) { rx_total /= 1024; rx_units = "MB"; }
+      if (rx_total > 1024) { rx_total /= 1024; rx_units = "GB"; }
+
+      if (tx_total > 1024) { tx_total /= 1024; tx_units = "KB"; }
+      if (tx_total > 1024) { tx_total /= 1024; tx_units = "MB"; }
+      if (tx_total > 1024) { tx_total /= 1024; tx_units = "GB"; }
+
+      printf("总接收: %.2f %s\n总发送: %.2f %s\n", rx_total, rx_units, tx_total, tx_units);
+    }' /proc/net/dev)
+
+  echo "$output"
+}
+
 # 检查流量是否达到阈值
 check_traffic() {
   current_rx_gb=$(cat ~/current_rx_gb.txt)
@@ -93,6 +114,7 @@ main_menu() {
     echo "------------------------------------------------"
     echo "当前流量使用情况，重启服务器流量计算会清零！"
     get_traffic
+    output_status
     echo "当前进站流量: $(cat ~/current_rx_gb.txt) GB"
     echo "当前出站流量: $(cat ~/current_tx_gb.txt) GB"
     echo "------------------------------------------------"
