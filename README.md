@@ -1,7 +1,7 @@
 - 建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
 
 # 简介
-一键安装脚本alpine-hysteria2
+一键安装alpine-hysteria2
  ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/alpine-hysteria2.sh)
 ``` 
@@ -59,10 +59,6 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 - 支持warp，任意门，ss解锁流媒体
 - 支持任意门中转
 - 支持端口跳跃
-
-### warp自定义解锁功能
-![](https://img.mareep.net/blog/2023/12/d6fbf369c96dbabb160e67f76dac0d6d.jpg)
-
 
 ## Credit
 - [sing-box-example](https://github.com/chika0801/sing-box-examples)
