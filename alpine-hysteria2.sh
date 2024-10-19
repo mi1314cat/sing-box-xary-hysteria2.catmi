@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# 介绍信息
+printf "\e[92m"
+printf "                       |\\__/,|   (\\\\ \n"
+printf "                     _.|o o  |_   ) )\n"
+printf "       -------------(((---(((-------------------\n"
+printf "                   catmi-alpine-Hysteria 2 \n"
+printf "       -----------------------------------------\n"
+printf "\e[0m"
+
 # 安装必要的软件包
 apk add --no-cache wget curl git openssh openssl openrc
 
@@ -145,11 +154,19 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# 显示 Hysteria 服务运行状态
+echo "Hysteria 服务运行状态:"
+service hysteria status
+
 # 创建客户端配置
 create_client_config
 if [ $? -ne 0 ]; then
   echo "创建客户端配置文件失败"
   exit 1
 fi
+
+# 显示客户端配置文件内容
+echo "客户端配置文件内容:"
+cat /root/hy2/config.yaml
 
 echo "Hysteria 配置完成，服务已启动"
