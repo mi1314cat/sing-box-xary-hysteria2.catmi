@@ -1,9 +1,9 @@
 - 建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
 
 # 简介
-一键安装脚本
+一键安装脚本alpine-hysteria2
  ```bash
-bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh)
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/alpine-hysteria2.sh)
 ``` 
 ## hysteria2 带面板脚本
 ```bash
