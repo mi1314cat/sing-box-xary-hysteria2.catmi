@@ -292,12 +292,13 @@ show_menu() {
   ${GREEN}4.${PLAIN} 重启 Hysteria 2
   ${GREEN}5.${PLAIN} 查看客户端配置
   ${GREEN}6.${PLAIN} 修改配置
+  ${GREEN}7.${PLAIN} 查询服务状态
   ${GREEN}0.${PLAIN} 退出脚本
   ----------------------
   Hysteria 2 服务状态: ${hysteria_server_status_text}
   ----------------------"
   
-    read -p "请输入选项 [0-6]: " choice
+    read -p "请输入选项 [0-7]: " choice
     
     case "${choice}" in
         0) clear;exit 0 ;;
@@ -307,6 +308,7 @@ show_menu() {
         4) systemctl restart hysteria-server.service ;;
         5) view_client_config ;;
         6) modify_config ;;
+        7) systemctl status hysteria-server.service ;;
         *) echo -e "${RED}无效的选项 ${choice}${PLAIN}" ;;
     esac
 
