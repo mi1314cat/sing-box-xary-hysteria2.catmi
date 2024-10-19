@@ -13,11 +13,12 @@ CURRENT_TRAFFIC_FILE="/var/log/current_traffic.log"
 SCRIPT_ON_LIMIT_FILE="/etc/traffic_script.conf"
 SERVICE_FILE="/etc/systemd/system/traffic-monitor.service"
 SCRIPT_PATH="/usr/local/bin/traffic-monitor.sh"
+CONFIG_FILE="/etc/traffic_monitor.conf"
 
 # 初始化文件
 initialize_files() {
     echo -e "${GREEN}初始化文件...${PLAIN}"
-    touch "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE"
+    touch "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE" "$CONFIG_FILE"
     if [ ! -s "$LIMIT_FILE" ]; then
         echo "500000" > "$LIMIT_FILE"  # 默认限制：500GB
     fi
@@ -26,6 +27,9 @@ initialize_files() {
     fi
     if [ ! -s "$SCRIPT_ON_LIMIT_FILE" ]; then
         echo "" > "$SCRIPT_ON_LIMIT_FILE"  # 默认脚本：无
+    fi
+    if [ ! -s "$CONFIG_FILE" ]; then
+        echo "script_on_limit=" > "$CONFIG_FILE"  # 默认配置：无
     fi
     echo -e "${GREEN}文件初始化完成。${PLAIN}"
 }
@@ -97,8 +101,9 @@ set_traffic_limit() {
 
 # 设置流量达到限制时执行的脚本
 set_script_on_limit() {
-    read -p "输入流量达到限制时要执行的脚本路径: " script_path
+    read -p "输入流量达到限制时要执行的脚本命令: " script_path
     echo "$script_path" > "$SCRIPT_ON_LIMIT_FILE"
+    sed -i "s|^script_on_limit=.*|script_on_limit=$script_path|" "$CONFIG_FILE"
     echo -e "${GREEN}已设置脚本: $script_path${PLAIN}"
 }
 
@@ -140,6 +145,16 @@ get_remaining_traffic() {
         echo "$remaining MB"
     else
         echo "$((remaining / 1000)) GB"
+    fi
+}
+
+# 获取流量达到限制时执行的脚本
+get_script_on_limit() {
+    script_path=$(cat "$SCRIPT_ON_LIMIT_FILE")
+    if [ -n "$script_path" ]; then
+        echo "$script_path"
+    else
+        echo "无"
     fi
 }
 
@@ -186,7 +201,7 @@ uninstall_script() {
     rm /tmp/crontab.bak
 
     # 删除文件
-    rm -f "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE"
+    rm -f "$TRAFFIC_FILE" "$LIMIT_FILE" "$RESET_METHOD_FILE" "$CURRENT_TRAFFIC_FILE" "$SCRIPT_ON_LIMIT_FILE" "$CONFIG_FILE"
 
     # 删除快捷方式
     sed -i '/catmiliu/d' ~/.bashrc
@@ -203,6 +218,7 @@ main_menu() {
   流量限制: $(get_traffic_limit)
   已使用的流量: $(get_current_traffic)
   剩余流量: $(get_remaining_traffic)
+  流量达到限制执行: $(get_script_on_limit)
   ----------------------
   ${GREEN}1.${PLAIN} 初始化文件
   ${GREEN}2.${PLAIN} 设置流量限制
