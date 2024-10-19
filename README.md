@@ -3,7 +3,7 @@
 # 简介
 一键安装脚本
   
-## 使用教程
+## hysteria2 带面板脚本
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
 ```
