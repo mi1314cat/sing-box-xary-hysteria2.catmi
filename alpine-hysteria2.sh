@@ -108,7 +108,7 @@ EOF
 }
 
 # 下载 Hysteria
-wget -O /usr/local/bin/hysteria https://download.hysteria.network/app/latest/hysteria-linux-amd64 --no-check-certificate
+wget -O /usr/local/bin/hysteria https://download.hysteria.network/app/latest/hysteria-linux-arm64 --no-check-certificate
 if [ $? -ne 0 ]; then
   echo "下载 Hysteria 失败"
   exit 1
