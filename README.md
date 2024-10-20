@@ -7,7 +7,9 @@
 - 支持warp，任意门，ss解锁流媒体
 - 支持任意门中转
 - 支持端口跳跃
-
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh)
+```
 ## hysteria2内核
 
 ### Debian ubuntu ....
