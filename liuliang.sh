@@ -20,7 +20,6 @@ if [ ! -f "$配置文件" ]; then
   }
 fi
 
-
 # 设置脚本文件执行权限
 chmod +x "$HOME/liuliang.sh" || {
   echo "设置脚本文件执行权限失败"
