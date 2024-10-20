@@ -6,19 +6,20 @@
 
 # 定义常量
 脚本地址="https://github.com/mi1314cat/sary-hysteria2.catmi/raw/refs/heads/main/liuliang.sh"
-配置文件=~/流量监控.conf
+配置文件="$HOME/流量监控.conf"
 默认进站阈值=95
 默认出站阈值=95
 默认重置日期=1
 默认命令="reboot"
 
 # 检查并下载脚本文件
-if [ ! -f "$HOME/liuliang.sh" ]; then
+if [ ! -f "$配置文件" ]; then
   curl -fsSL "$脚本地址" -o "$HOME/liuliang.sh" || {
     echo "下载脚本文件失败"
     exit 1
   }
 fi
+
 
 # 设置脚本文件执行权限
 chmod +x "$HOME/liuliang.sh" || {
