@@ -7,7 +7,12 @@
 - 支持warp，任意门，ss解锁流媒体
 - 支持任意门中转
 - 支持端口跳跃
+# 实验性功能
+## infinite-nodes IPv6 
 
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/infiniteipv6/raw/refs/heads/main/infinite-nodes.sh)
+```
 ## hysteria2内核
 
 ### Debian ubuntu ....
