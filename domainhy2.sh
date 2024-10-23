@@ -98,7 +98,9 @@ domain=$(random_website)
 print_with_delay "生成自签名证书..." 0.03
 openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
     -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-    -subj "$domain" -days 36500
+    -subj "/CN=$domain" -days 36500 && \
+    sudo chown hysteria /etc/hysteria/server.key && \
+    sudo chown hysteria /etc/hysteria/server.crt
 
 # 确保密钥和证书仅对 Hysteria 用户可读
 chmod 600 /etc/hysteria/server.key /etc/hysteria/server.crt
