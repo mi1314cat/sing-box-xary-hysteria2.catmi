@@ -1,23 +1,19 @@
 #!/bin/bash
-
-# 启用错误处理，如果任何命令失败，脚本将退出
-set -e
-
 # 介绍信息
-echo -e "\e[92m"
-echo -e "                       |\\__/,|   (\\\\ \n"
-echo -e "                     _.|o o  |_   ) )\n"
-echo -e "       -------------(((---(((-------------------\n"
-echo -e "                    catmi.Hysteria 2 \n"
-echo -e "       -----------------------------------------\n"
-echo -e "\e[0m"
+printf "\e[92m"
+printf "                       |\\__/,|   (\\\\ \n"
+printf "                     _.|o o  |_   ) )\n"
+printf "       -------------(((---(((-------------------\n"
+printf "                    catmi.Hysteria 2 \n"
+printf "       -----------------------------------------\n"
+printf "\e[0m"
 
 # 打印带延迟的消息
 print_with_delay() {
     local message="$1"
     local delay="$2"
     for (( i=0; i<${#message}; i++ )); do
-        echo -n "${message:$i:1}"
+        printf "%s" "${message:$i:1}"
         sleep "$delay"
     done
     echo ""
@@ -26,64 +22,13 @@ print_with_delay() {
 # 生成端口的函数
 generate_port() {
     local protocol="$1"
-    local port
-    while true; do
+    while :; do
         port=$((RANDOM % 10001 + 10000))
         read -p "请为 ${protocol} 输入监听端口(默认为随机生成): " user_input
         port=${user_input:-$port}
-        if ! ss -tuln | grep -q ":$port\b"; then
-            echo "$port"
-            return $port
-        else
-            echo "端口 $port 被占用，请输入其他端口"
-        fi
+        ss -tuln | grep -q ":$port\b" || { echo "$port"; return $port; }
+        echo "端口 $port 被占用，请输入其他端口"
     done
-}
-
-# 定义函数，返回随机选择的域名
-random_website() {
-    local domains=(
-        "bing.com"
-        "one-piece.com"
-        "lovelive-anime.jp"
-        "swift.com"
-        "academy.nvidia.com"
-        "cisco.com"
-        "samsung.com"
-        "amd.com"
-        "apple.com"
-        "music.apple.com"
-        "amazon.com"
-        "fandom.com"
-        "tidal.com"
-        "zoro.to"
-        "pixiv.co.jp"
-        "mxj.myanimelist.net"
-        "mora.jp"
-        "j-wave.co.jp"
-        "dmm.com"
-        "booth.pm"
-        "ivi.tv"
-        "leercapitulo.com"
-        "sky.com"
-        "itunes.apple.com"
-        "download-installer.cdn.mozilla.net"
-        "images-na.ssl-images-amazon.com"
-        "swdist.apple.com"
-        "swcdn.apple.com"
-        "updates.cdn-apple.com"
-        "mensura.cdn-apple.com"
-        "osxapps.itunes.apple.com"
-        "aod.itunes.apple.com"
-        "www.google-analytics.com"
-        "dl.google.com"
-    )
-
-    local total_domains=${#domains[@]}
-    local random_index=$((RANDOM % total_domains))
-    
-    # 输出选择的域名
-    echo "${domains[random_index]}"
 }
 
 print_with_delay "**************Hysteria 2.catmi*************" 0.03
@@ -91,42 +36,36 @@ print_with_delay "**************Hysteria 2.catmi*************" 0.03
 print_with_delay "正在安装 Hysteria 2..." 0.03
 bash <(curl -fsSL https://get.hy2.sh/)
 
-# 调用函数获取随机域名
-domain=$(random_website)
-
 # 生成自签证书
 print_with_delay "生成自签名证书..." 0.03
 openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
     -keyout /etc/hysteria/server.key -out /etc/hysteria/server.crt \
-    -subj "/CN=$domain" -days 36500 && \
+    -subj "/CN=bing.com" -days 36500 && \
     sudo chown hysteria /etc/hysteria/server.key && \
     sudo chown hysteria /etc/hysteria/server.crt
 
-# 确保密钥和证书仅对 Hysteria 用户可读
-chmod 600 /etc/hysteria/server.key /etc/hysteria/server.crt
-
 # 自动生成密码
-hysteria_auth_password=$(openssl rand -base64 16)
+AUTH_PASSWORD=$(openssl rand -base64 16)
 
 # 提示输入监听端口号
-hysteria_port=$(generate_port "Hysteria")
+PORT=$(generate_port "Hysteria")
 
 # 获取公网 IP 地址
-public_ip_v4=$(curl -s https://api.ipify.org)
-public_ip_v6=$(curl -s https://api64.ipify.org)
-echo "公网 IPv4 地址: $public_ip_v4"
-echo "公网 IPv6 地址: $public_ip_v6"
+PUBLIC_IP_V4=$(curl -s https://api.ipify.org)
+PUBLIC_IP_V6=$(curl -s https://api64.ipify.org)
+echo "公网 IPv4 地址: $PUBLIC_IP_V4"
+echo "公网 IPv6 地址: $PUBLIC_IP_V6"
 
 # 选择使用哪个公网 IP 地址
 echo "请选择要使用的公网 IP 地址:"
-echo "1. $public_ip_v4"
-echo "2. $public_ip_v6"
-read -p "请输入对应的数字选择: " ip_choice
+echo "1. $PUBLIC_IP_V4"
+echo "2. $PUBLIC_IP_V6"
+read -p "请输入对应的数字选择: " IP_CHOICE
 
-if [ "$ip_choice" -eq 1 ]; then
-    public_ip=$public_ip_v4
-elif [ "$ip_choice" -eq 2 ]; then
-    public_ip=$public_ip_v6
+if [ "$IP_CHOICE" -eq 1 ]; then
+    PUBLIC_IP=$PUBLIC_IP_V4
+elif [ "$IP_CHOICE" -eq 2 ]; then
+    PUBLIC_IP=$PUBLIC_IP_V6
 else
     echo "无效选择，退出脚本"
     exit 1
@@ -135,7 +74,7 @@ fi
 # 创建 Hysteria 2 服务端配置文件
 print_with_delay "生成 Hysteria 2 配置文件..." 0.03
 cat << EOF > /etc/hysteria/config.yaml
-listen: ":$hysteria_port"
+listen: ":$PORT"
 
 tls:
   cert: /etc/hysteria/server.crt
@@ -143,12 +82,12 @@ tls:
 
 auth:
   type: password
-  password: $hysteria_auth_password
+  password: $AUTH_PASSWORD
   
 masquerade:
   type: proxy
   proxy:
-    url: https://$domain
+    url: https://bing.com
     rewriteHost: true
 EOF
 
@@ -197,14 +136,14 @@ dns:
 
 proxies:        
   - name: Hy2-Hysteria2
-    server: $public_ip
-    port: $hysteria_port
+    server: $PUBLIC_IP
+    port: $PORT
     type: hysteria2
     up: "45 Mbps"
     down: "150 Mbps"
-    sni: $domain
-    password: $hysteria_auth_password
-    skip-cert-verify: false
+    sni: bing.com
+    password: $AUTH_PASSWORD
+    skip-cert-verify: true
     alpn:
       - h3
 
@@ -228,12 +167,18 @@ rules:
   - GEOIP,LAN,DIRECT
   - GEOIP,CN,DIRECT
   - MATCH,节点选择
+
+
+
+
+  hysteria2://$AUTH_PASSWORD==@[$PUBLIC_IP]:$PORT/?sni=bing.com&insecure=1#HY2-HYSTERIA2
+
 EOF
 
 # 显示生成的密码
 print_with_delay "Hysteria 2 安装和配置完成！" 0.03
-print_with_delay "认证密码: $hysteria_auth_password" 0.03
-print_with_delay "伪装域名：$domain" 0.03
+print_with_delay "认证密码: $AUTH_PASSWORD" 0.03
+print_with_delay "无混淆" 0.03
 print_with_delay "服务端配置文件已保存到 /etc/hysteria/config.yaml" 0.03
 print_with_delay "客户端配置文件已保存到 /root/hy2/config.yaml" 0.03
 
