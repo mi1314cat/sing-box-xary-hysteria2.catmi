@@ -8,6 +8,10 @@
 - 支持任意门中转
 - 支持端口跳跃
 # 实验性功能
+## domainhy2
+```bash
+bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/domainhy2.sh)
+``
 ## infinite-nodes IPv6 
 
 ```bash
