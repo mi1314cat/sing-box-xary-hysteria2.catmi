@@ -24,7 +24,7 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 ```
 ##### cf加速
 ```bash
-bash <(curl -fsSL https://cfgithub.onecatmi.top/https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/Ubuntu.sh)
+bash <(curl -fsSL https://cfgithub.gw2333.workers.dev/https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/Ubuntu.sh)
 ```
  hysteria2 带面板脚本
 ```bash
