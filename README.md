@@ -22,6 +22,10 @@ bash <(curl -fsSL https://github.com/mi1314cat/infiniteipv6/raw/refs/heads/main/
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/Ubuntu.sh)
 ```
+##### cf加速
+```bash
+bash <(curl -fsSL https://cfgithub.onecatmi.top/https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/Ubuntu.sh)
+```
  hysteria2 带面板脚本
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
