@@ -26,11 +26,11 @@ bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw
 ```bash
 bash <(curl -fsSL https://cfgithub.gw2333.workers.dev/https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/Ubuntu.sh)
 ```
- hysteria2 带面板脚本
+#### hysteria2 带面板脚本
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/cathy2.sh)
 ```
-  hysteria2 脚本
+#####  hysteria2 快速脚本
 ```bash
 bash <(curl -fsSL https://github.com/mi1314cat/sing-box-xary-hysteria2.catmi/raw/refs/heads/main/H3hy2.sh)
 ```
