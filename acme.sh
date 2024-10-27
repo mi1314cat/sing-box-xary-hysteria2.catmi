@@ -13,6 +13,10 @@ read -p "请输入选项 (1 或 2): " choice
 read -p "请输入域名: " DOMAIN
 read -p "请输入电子邮件地址: " EMAIL
 
+# 创建目标目录
+TARGET_DIR="/root/catmi"
+mkdir -p "$TARGET_DIR"
+
 if [ "$choice" -eq 1 ]; then
     # 选项 1: 安装更新、克隆仓库并执行脚本
     echo "执行安装acme证书..."
@@ -20,7 +24,7 @@ if [ "$choice" -eq 1 ]; then
     # 更新系统并安装必要的依赖项
     echo "更新系统并安装依赖项..."
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y curl socat git cron
+    sudo apt install -y curl socat git cron openssl
 
     # 安装 acme.sh
     echo "安装 acme.sh..."
@@ -31,24 +35,20 @@ if [ "$choice" -eq 1 ]; then
 
     # 注册账户
     echo "注册账户..."
-    acme.sh --register-account -m "$EMAIL"
+    "$HOME/.acme.sh/acme.sh" --register-account -m "$EMAIL"
 
     # 申请 SSL 证书
     echo "申请 SSL 证书..."
-    if ! acme.sh --issue --standalone -d "$DOMAIN"; then
+    if ! "$HOME/.acme.sh/acme.sh" --issue --standalone -d "$DOMAIN"; then
         echo "证书申请失败，删除已生成的文件和文件夹。"
         rm -f "$HOME/${DOMAIN}.key" "$HOME/${DOMAIN}.crt"
-        acme.sh --remove -d "$DOMAIN"
+        "$HOME/.acme.sh/acme.sh" --remove -d "$DOMAIN"
         exit 1
     fi
 
-    # 创建目标目录
-    TARGET_DIR="/root/catmi"
-    mkdir -p "$TARGET_DIR"
-
     # 安装 SSL 证书并移动到目标目录
     echo "安装 SSL 证书..."
-    acme.sh --installcert -d "$DOMAIN" \
+    "$HOME/.acme.sh/acme.sh" --installcert -d "$DOMAIN" \
         --key-file       "$TARGET_DIR/${DOMAIN}.key" \
         --fullchain-file "$TARGET_DIR/${DOMAIN}.crt"
 
@@ -61,7 +61,7 @@ if [ "$choice" -eq 1 ]; then
     cat << EOF > /root/renew_cert.sh
 #!/bin/bash
 export PATH="\$HOME/.acme.sh:\$PATH"
-acme.sh --renew -d "$DOMAIN" --key-file "$TARGET_DIR/${DOMAIN}.key" --fullchain-file "$TARGET_DIR/${DOMAIN}.crt"
+\$HOME/.acme.sh/acme.sh --renew -d "$DOMAIN" --key-file "$TARGET_DIR/${DOMAIN}.key" --fullchain-file "$TARGET_DIR/${DOMAIN}.crt"
 EOF
     chmod +x /root/renew_cert.sh
 
@@ -77,22 +77,18 @@ elif [ "$choice" -eq 2 ]; then
     # 安装 Certbot
     echo "安装 Certbot..."
     sudo apt-get update
-    sudo apt-get install -y certbot
+    sudo apt-get install -y certbot openssl
 
     # 手动获取证书
     echo "手动获取证书..."
     sudo certbot certonly --manual --preferred-challenges dns -d "$DOMAIN"
 
-    # 创建目标目录
-    CERT_PATH="/root/catmi"
-    sudo mkdir -p "$CERT_PATH"
-
     # 移动生成的证书到目标文件夹中
-    echo "移动证书到 $CERT_PATH ..."
-    sudo mv "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" "$CERT_PATH/fullchain.pem"
-    sudo mv "/etc/letsencrypt/live/$DOMAIN/privkey.pem" "$CERT_PATH/privkey.pem"
+    echo "移动证书到 $TARGET_DIR ..."
+    sudo mv "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" "$TARGET_DIR/fullchain.pem"
+    sudo mv "/etc/letsencrypt/live/$DOMAIN/privkey.pem" "$TARGET_DIR/privkey.pem"
 
-    echo "SSL 证书已安装并移动至 $CERT_PATH 目录中"
+    echo "SSL 证书已安装并移动至 $TARGET_DIR 目录中"
 else
     echo "无效选项，请输入 1 或 2."
 fi
