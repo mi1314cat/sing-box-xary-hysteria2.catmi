@@ -2,8 +2,8 @@
 
 # 提供操作选项供用户选择
 echo "请选择要执行的操作："
-echo "1) 安装更新、克隆仓库并执行 acme_2.0.sh 脚本"
-echo "2) 手动获取 SSL 证书并将其移动到 /catmi 文件夹"
+echo "1) 有80和443端口"
+echo "2) 无80 443 端口"
 read -p "请输入选项 (1 或 2): " choice
 
 if [ "$choice" -eq 1 ]; then
